@@ -1,0 +1,25 @@
+package com.bernardo.dbi.player;
+
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.Identifier;
+
+public class DBIPlayerData {
+
+    public static Race getRace(PlayerEntity p)          { return ((DBIPlayerDataAccess)p).dbi_getRace();        }
+    public static AgeStage getAge(PlayerEntity p)       { return ((DBIPlayerDataAccess)p).dbi_getAge();         }
+    public static FightingStyle getStyle(PlayerEntity p){ return ((DBIPlayerDataAccess)p).dbi_getStyle();       }
+    public static Identifier getHairTexture(PlayerEntity p) { return ((DBIPlayerDataAccess)p).dbi_getHairTexture(); }
+    public static Identifier getEyeTexture(PlayerEntity p)  { return ((DBIPlayerDataAccess)p).dbi_getEyeTexture();  }
+    public static Identifier getNoseTexture(PlayerEntity p)  { return ((DBIPlayerDataAccess)p).dbi_getNoseTexture(); }
+
+    public static void setRace(PlayerEntity p, Race r)          { ((DBIPlayerDataAccess)p).dbi_setRace(r);  }
+    public static void setAge(PlayerEntity p, AgeStage a)       { ((DBIPlayerDataAccess)p).dbi_setAge(a);   }
+    public static void setStyle(PlayerEntity p, FightingStyle s){ ((DBIPlayerDataAccess)p).dbi_setStyle(s); }
+    public static void setHairTexture(PlayerEntity p, Identifier t) { ((DBIPlayerDataAccess)p).dbi_setHairTexture(t); }
+    public static void setEyeTexture(PlayerEntity p, Identifier t)  { ((DBIPlayerDataAccess)p).dbi_setEyeTexture(t);  }
+    public static void setNoseTexture(PlayerEntity p, Identifier t)  { ((DBIPlayerDataAccess)p).dbi_setNoseTexture(t); }
+
+    public static float getFinalDamage(PlayerEntity p)  { return PlayerStats.getDamage(getRace(p),  getAge(p), getStyle(p)); }
+    public static float getFinalDefense(PlayerEntity p) { return PlayerStats.getDefense(getRace(p), getAge(p), getStyle(p)); }
+    public static float getFinalSize(PlayerEntity p)    { return PlayerStats.getSize(getAge(p)); }
+}

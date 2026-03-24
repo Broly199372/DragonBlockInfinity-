@@ -1,23 +1,963 @@
 === ARQUIVOS JAVA ===
+Arquivo: src/main/java/com/bernardo/dbi/registry/DBIItems.java
+Conteúdo:
+package com.bernardo.dbi.registry;
+
+import net.minecraft.block.Block;
+import net.minecraft.item.BlockItem;
+import net.minecraft.item.FoodComponent;
+import net.minecraft.item.Item;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.util.Identifier;
+
+public class DBIItems {
+
+    public static final Item BLOCK_DRAGONBALL1 = registerBlockItem("block_dragonball1", DBIBlocks.BLOCK_DRAGONBALL1);
+    public static final Item BLOCK_DRAGONBALL2 = registerBlockItem("block_dragonball2", DBIBlocks.BLOCK_DRAGONBALL2);
+    public static final Item BLOCK_DRAGONBALL3 = registerBlockItem("block_dragonball3", DBIBlocks.BLOCK_DRAGONBALL3);
+    public static final Item BLOCK_DRAGONBALL4 = registerBlockItem("block_dragonball4", DBIBlocks.BLOCK_DRAGONBALL4);
+    public static final Item BLOCK_DRAGONBALL5 = registerBlockItem("block_dragonball5", DBIBlocks.BLOCK_DRAGONBALL5);
+    public static final Item BLOCK_DRAGONBALL6 = registerBlockItem("block_dragonball6", DBIBlocks.BLOCK_DRAGONBALL6);
+    public static final Item BLOCK_DRAGONBALL7 = registerBlockItem("block_dragonball7", DBIBlocks.BLOCK_DRAGONBALL7);
+
+    public static final Item NAMEK_GRASS              = registerBlockItem("namek_grass",              DBIBlocks.NAMEK_GRASS);
+    public static final Item NAMEK_DIRTY              = registerBlockItem("namek_dirty",              DBIBlocks.NAMEK_DIRTY);
+    public static final Item DIRTY_STONE              = registerBlockItem("dirty_stone",              DBIBlocks.DIRTY_STONE);
+    public static final Item DIRTY_STONE_COBBLESTONE  = registerBlockItem("dirty_stone_cobblestone",  DBIBlocks.DIRTY_STONE_COBBLESTONE);
+
+    public static final Item SENZU = register("senzu",
+            new Item(new Item.Settings()
+                    .food(new FoodComponent.Builder()
+                            .hunger(10)
+                            .saturationModifier(1.0f)
+                            .alwaysEdible()
+                            .build())));
+
+    public static final Item DINO_MEAT = register("dino_meat",
+            new Item(new Item.Settings()
+                    .food(new FoodComponent.Builder()
+                            .hunger(3)
+                            .saturationModifier(0.3f)
+                            .build())));
+
+    public static final Item DINO_MEAT_COOKED = register("dino_meat_cooked",
+            new Item(new Item.Settings()
+                    .food(new FoodComponent.Builder()
+                            .hunger(8)
+                            .saturationModifier(0.8f)
+                            .build())));
+
+    public static final Item NIMBUS  = register("nimbus",  new Item(new Item.Settings().maxCount(1)));
+    public static final Item RADAR   = register("radar",   new Item(new Item.Settings().maxCount(1)));
+    public static final Item PESO    = register("peso",    new Item(new Item.Settings().maxCount(16)));
+    public static final Item SCOUTER = register("scouter", new Item(new Item.Settings().maxCount(1)));
+
+    private static Item register(String name, Item item) {
+        return Registry.register(Registries.ITEM, new Identifier("dragonblockinfinity", name), item);
+    }
+
+    private static Item registerBlockItem(String name, Block block) {
+        return register(name, new BlockItem(block, new Item.Settings()));
+    }
+
+    public static void initialize() {}
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/registry/DBICreativeTab.java
+Conteúdo:
+package com.bernardo.dbi.registry;
+
+import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
+import net.minecraft.item.ItemGroup;
+import net.minecraft.item.ItemStack;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
+
+public class DBICreativeTab {
+
+    public static final ItemGroup DBI_TAB = Registry.register(
+            Registries.ITEM_GROUP,
+            new Identifier("dragonblockinfinity", "dbi_tab"),
+            FabricItemGroup.builder()
+                    .displayName(Text.translatable("itemGroup.dbi_tab"))
+                    .icon(() -> new ItemStack(DBIItems.BLOCK_DRAGONBALL1))
+                    .entries((context, entries) -> {
+                        entries.add(DBIItems.BLOCK_DRAGONBALL1);
+                        entries.add(DBIItems.BLOCK_DRAGONBALL2);
+                        entries.add(DBIItems.BLOCK_DRAGONBALL3);
+                        entries.add(DBIItems.BLOCK_DRAGONBALL4);
+                        entries.add(DBIItems.BLOCK_DRAGONBALL5);
+                        entries.add(DBIItems.BLOCK_DRAGONBALL6);
+                        entries.add(DBIItems.BLOCK_DRAGONBALL7);
+                        entries.add(DBIItems.NAMEK_GRASS);
+                        entries.add(DBIItems.NAMEK_DIRTY);
+                        entries.add(DBIItems.DIRTY_STONE);
+                        entries.add(DBIItems.DIRTY_STONE_COBBLESTONE);
+                        entries.add(DBIItems.SENZU);
+                        entries.add(DBIItems.DINO_MEAT);
+                        entries.add(DBIItems.DINO_MEAT_COOKED);
+                        entries.add(DBIItems.NIMBUS);
+                        entries.add(DBIItems.RADAR);
+                        entries.add(DBIItems.PESO);
+                        entries.add(DBIItems.SCOUTER);
+                    })
+                    .build());
+
+    public static void initialize() {}
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/registry/DBIBlocks.java
+Conteúdo:
+package com.bernardo.dbi.registry;
+
+import com.bernardo.dbi.block.DragonBallBlock;
+import net.minecraft.block.AbstractBlock;
+import net.minecraft.block.Block;
+import net.minecraft.block.MapColor;
+import net.minecraft.block.piston.PistonBehavior;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.sound.BlockSoundGroup;
+import net.minecraft.util.Identifier;
+
+public class DBIBlocks {
+
+    public static final Block BLOCK_DRAGONBALL1 = register("block_dragonball1",
+            new DragonBallBlock(AbstractBlock.Settings.create()
+                    .mapColor(MapColor.ORANGE)
+                    .strength(3.0f, 6.0f)
+                    .sounds(BlockSoundGroup.GLASS)
+                    .nonOpaque()
+                    .pistonBehavior(PistonBehavior.DESTROY)));
+
+    public static final Block BLOCK_DRAGONBALL2 = register("block_dragonball2",
+            new DragonBallBlock(AbstractBlock.Settings.create()
+                    .mapColor(MapColor.ORANGE)
+                    .strength(3.0f, 6.0f)
+                    .sounds(BlockSoundGroup.GLASS)
+                    .nonOpaque()
+                    .pistonBehavior(PistonBehavior.DESTROY)));
+
+    public static final Block BLOCK_DRAGONBALL3 = register("block_dragonball3",
+            new DragonBallBlock(AbstractBlock.Settings.create()
+                    .mapColor(MapColor.ORANGE)
+                    .strength(3.0f, 6.0f)
+                    .sounds(BlockSoundGroup.GLASS)
+                    .nonOpaque()
+                    .pistonBehavior(PistonBehavior.DESTROY)));
+
+    public static final Block BLOCK_DRAGONBALL4 = register("block_dragonball4",
+            new DragonBallBlock(AbstractBlock.Settings.create()
+                    .mapColor(MapColor.ORANGE)
+                    .strength(3.0f, 6.0f)
+                    .sounds(BlockSoundGroup.GLASS)
+                    .nonOpaque()
+                    .pistonBehavior(PistonBehavior.DESTROY)));
+
+    public static final Block BLOCK_DRAGONBALL5 = register("block_dragonball5",
+            new DragonBallBlock(AbstractBlock.Settings.create()
+                    .mapColor(MapColor.ORANGE)
+                    .strength(3.0f, 6.0f)
+                    .sounds(BlockSoundGroup.GLASS)
+                    .nonOpaque()
+                    .pistonBehavior(PistonBehavior.DESTROY)));
+
+    public static final Block BLOCK_DRAGONBALL6 = register("block_dragonball6",
+            new DragonBallBlock(AbstractBlock.Settings.create()
+                    .mapColor(MapColor.ORANGE)
+                    .strength(3.0f, 6.0f)
+                    .sounds(BlockSoundGroup.GLASS)
+                    .nonOpaque()
+                    .pistonBehavior(PistonBehavior.DESTROY)));
+
+    public static final Block BLOCK_DRAGONBALL7 = register("block_dragonball7",
+            new DragonBallBlock(AbstractBlock.Settings.create()
+                    .mapColor(MapColor.ORANGE)
+                    .strength(3.0f, 6.0f)
+                    .sounds(BlockSoundGroup.GLASS)
+                    .nonOpaque()
+                    .pistonBehavior(PistonBehavior.DESTROY)));
+
+    public static final Block NAMEK_GRASS = register("namek_grass",
+            new Block(AbstractBlock.Settings.create()
+                    .mapColor(MapColor.GREEN)
+                    .strength(0.6f)
+                    .sounds(BlockSoundGroup.GRASS)));
+
+    public static final Block NAMEK_DIRTY = register("namek_dirty",
+            new Block(AbstractBlock.Settings.create()
+                    .mapColor(MapColor.DIRT_BROWN)
+                    .strength(0.5f)
+                    .sounds(BlockSoundGroup.GRAVEL)));
+
+    public static final Block DIRTY_STONE = register("dirty_stone",
+            new Block(AbstractBlock.Settings.create()
+                    .mapColor(MapColor.STONE_GRAY)
+                    .strength(1.5f, 6.0f)
+                    .sounds(BlockSoundGroup.STONE)
+                    .requiresTool()));
+
+    public static final Block DIRTY_STONE_COBBLESTONE = register("dirty_stone_cobblestone",
+            new Block(AbstractBlock.Settings.create()
+                    .mapColor(MapColor.STONE_GRAY)
+                    .strength(2.0f, 6.0f)
+                    .sounds(BlockSoundGroup.STONE)
+                    .requiresTool()));
+
+    private static Block register(String name, Block block) {
+        return Registry.register(Registries.BLOCK, new Identifier("dragonblockinfinity", name), block);
+    }
+
+    public static void initialize() {}
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/client/KeyBindings.java
+Conteúdo:
+package com.bernardo.dbi.client;
+
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
+import org.lwjgl.glfw.GLFW;
+
+public class KeyBindings {
+
+    public static KeyBinding OPEN_MENU;
+
+    public static void initialize() {
+        OPEN_MENU = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.dbi.open_menu",
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_K,
+                "key.categories.dbi"
+        ));
+    }
+}
+
+----------------------------------------
 Arquivo: src/main/java/com/bernardo/dbi/client/ClientSetup.java
 Conteúdo:
 package com.bernardo.dbi.client;
 
+import com.bernardo.dbi.screen.CaracterScreen;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.minecraft.client.MinecraftClient;
 
 public class ClientSetup implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        // Código de inicialização do cliente aqui
-        System.out.println("Cliente do Dragon Block Infinity inicializado!");
+        KeyBindings.initialize();
+
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            while (KeyBindings.OPEN_MENU.wasPressed()) {
+                if (client.player != null) {
+                    MinecraftClient.getInstance().setScreen(new CaracterScreen());
+                }
+            }
+        });
     }
 }
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/CaracterScreen.java
+Conteúdo:
+package com.bernardo.dbi.screen;
+
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.ingame.InventoryScreen;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.math.MathHelper;
+
+public class CaracterScreen extends Screen {
+
+    private static final Identifier MENU_TEXTURE = new Identifier("dragonblockinfinity", "textures/gui/menu.png");
+    private static final int MENU_IMG_W = 510;
+    private static final int MENU_IMG_H = 318;
+    private static final int TEX_SIZE   = 512;
+
+    private int xSize, ySize, guiLeft, guiTop;
+    private float scaleX, scaleY;
+
+    public CaracterScreen() {
+        super(Text.empty());
+    }
+
+    @Override
+    protected void init() {
+        xSize   = MathHelper.floor(this.width * 0.75f);
+        ySize   = MathHelper.floor(xSize * ((float) MENU_IMG_H / MENU_IMG_W));
+        guiLeft = (this.width  - xSize) / 2;
+        guiTop  = (this.height - ySize) / 2;
+        scaleX  = (float) xSize / MENU_IMG_W;
+        scaleY  = (float) ySize / MENU_IMG_H;
+    }
+
+    @Override
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        this.renderBackground(context);
+
+        context.getMatrices().push();
+        context.getMatrices().translate(guiLeft, guiTop, 0);
+        context.getMatrices().scale(scaleX, scaleY, 1.0f);
+        context.drawTexture(MENU_TEXTURE, 0, 0, 0, 0, MENU_IMG_W, MENU_IMG_H, TEX_SIZE, TEX_SIZE);
+        context.getMatrices().pop();
+
+        // Player: ocupa 60% da altura do menu, base alinhada a 90% da altura do menu
+        int playerSize = MathHelper.floor(ySize * 0.60f);
+        int playerX    = guiLeft + xSize / 4;
+        int playerY    = guiTop  + MathHelper.floor(ySize * 0.90f);
+
+        InventoryScreen.drawEntity(
+                context,
+                playerX, playerY,
+                playerSize,
+                (float)(playerX - mouseX),
+                (float)(guiTop + ySize / 2 - mouseY),
+                this.client.player
+        );
+
+        super.render(context, mouseX, mouseY, delta);
+    }
+
+    @Override
+    public boolean shouldPause() { return false; }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnCloseXBeige.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnCloseXBeige extends IconButton {
+    public BtnCloseXBeige() {
+        super(
+            30, 30,
+            60, 60,
+            30, 30,
+            60, 90
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnConfirmBeige.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnConfirmBeige extends IconButton {
+    public BtnConfirmBeige() {
+        super(
+            30, 30,
+            90, 60,
+            30, 30,
+            90, 90
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/IconJarDark.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class IconJarDark extends IconButton {
+    public IconJarDark() {
+        super(
+            10, 10,
+            10, 120,
+            10, 10,
+            10, 120
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnDoubleLeft.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnDoubleLeft extends IconButton {
+    public BtnDoubleLeft() {
+        super(
+            30, 30,
+            140, 0,
+            30, 30,
+            140, 30
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnStop.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnStop extends IconButton {
+    public BtnStop() {
+        super(
+            30, 30,
+            380, 0,
+            30, 30,
+            380, 30
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnPause.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnPause extends IconButton {
+    public BtnPause() {
+        super(
+            30, 30,
+            350, 0,
+            30, 30,
+            350, 30
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/ScrollBarTrack.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class ScrollBarTrack extends IconButton {
+    public ScrollBarTrack() {
+        super(
+            10, 100,
+            500, 0,
+            10, 100,
+            500, 0
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnArrowDownSmall.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnArrowDownSmall extends IconButton {
+    public BtnArrowDownSmall() {
+        super(
+            20, 20,
+            120, 0,
+            20, 20,
+            120, 30
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnArrowLeftSmall.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnArrowLeftSmall extends IconButton {
+    public BtnArrowLeftSmall() {
+        super(
+            20, 20,
+            60, 0,
+            20, 20,
+            60, 30
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnPlay.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnPlay extends IconButton {
+    public BtnPlay() {
+        super(
+            30, 30,
+            320, 0,
+            30, 30,
+            320, 30
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnDoubleRight.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnDoubleRight extends IconButton {
+    public BtnDoubleRight() {
+        super(
+            30, 30,
+            170, 0,
+            30, 30,
+            170, 30
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnCloseX.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnCloseX extends IconButton {
+    public BtnCloseX() {
+        super(
+            30, 30,
+            260, 0,
+            30, 30,
+            260, 30
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/IconPlusDark.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class IconPlusDark extends IconButton {
+    public IconPlusDark() {
+        super(
+            10, 10,
+            0,  120,
+            10, 10,
+            0,  120
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/IconJarRed.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class IconJarRed extends IconButton {
+    public IconJarRed() {
+        super(
+            10, 10,
+            10, 130,
+            10, 10,
+            10, 130
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnArrowLeftBeige.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnArrowLeftBeige extends IconButton {
+    public BtnArrowLeftBeige() {
+        super(
+            30, 30,
+            0,  60,
+            30, 30,
+            0,  90
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/IconPlusRed.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class IconPlusRed extends IconButton {
+    public IconPlusRed() {
+        super(
+            10, 10,
+            0,  130,
+            10, 10,
+            0,  130
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/IconPlusBeige.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class IconPlusBeige extends IconButton {
+    public IconPlusBeige() {
+        super(
+            10, 10,
+            0,  140,
+            10, 10,
+            0,  140
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnSkipStart.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnSkipStart extends IconButton {
+    public BtnSkipStart() {
+        super(
+            30, 30,
+            200, 0,
+            30, 30,
+            200, 30
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnArrowRightSmall.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnArrowRightSmall extends IconButton {
+    public BtnArrowRightSmall() {
+        super(
+            20, 20,
+            80, 0,
+            20, 20,
+            80, 30
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnArrowLeftLarge.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnArrowLeftLarge extends IconButton {
+    public BtnArrowLeftLarge() {
+        super(
+            30, 30,
+            0,  0,
+            30, 30,
+            0,  30
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnConfirmDiamond.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnConfirmDiamond extends IconButton {
+    public BtnConfirmDiamond() {
+        super(
+            30, 30,
+            290, 0,
+            30, 30,
+            290, 30
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnArrowUpSmall.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnArrowUpSmall extends IconButton {
+    public BtnArrowUpSmall() {
+        super(
+            20, 20,
+            100, 0,
+            20, 20,
+            100, 30
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/IconButton.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
+import net.minecraft.client.gui.widget.ClickableWidget;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
+
+public abstract class IconButton extends ClickableWidget {
+
+    private static final Identifier ICONS = new Identifier("dragonblockinfinity", "textures/gui/icons_btn.png");
+    private static final int SHEET_SIZE = 512;
+
+    protected final int wNormal, hNormal;
+    protected final int uNormal, vNormal;
+    protected final int wPressed, hPressed;
+    protected final int uPressed, vPressed;
+
+    private float scale = 1.0f;
+    private boolean pressed = false;
+
+    public IconButton(
+        int wNormal, int hNormal,
+        int uNormal, int vNormal,
+        int wPressed, int hPressed,
+        int uPressed, int vPressed
+    ) {
+        super(0, 0, wNormal, hNormal, Text.empty());
+        this.wNormal  = wNormal;
+        this.hNormal  = hNormal;
+        this.uNormal  = uNormal;
+        this.vNormal  = vNormal;
+        this.wPressed  = wPressed;
+        this.hPressed  = hPressed;
+        this.uPressed = uPressed;
+        this.vPressed = vPressed;
+    }
+
+    public void place(int x, int y, float scale) {
+        this.scale  = scale;
+        this.setX(x);
+        this.setY(y);
+        this.width  = Math.max(1, Math.round(wNormal * scale));
+        this.height = Math.max(1, Math.round(hNormal * scale));
+    }
+
+    @Override
+    public void renderButton(DrawContext context, int mouseX, int mouseY, float delta) {
+        int u = pressed ? uPressed : uNormal;
+        int v = pressed ? vPressed : vNormal;
+        int drawW = Math.max(1, Math.round((pressed ? wPressed : wNormal) * scale));
+        int drawH = Math.max(1, Math.round((pressed ? hPressed : hNormal) * scale));
+        context.drawTexture(ICONS, this.getX(), this.getY(), u, v, drawW, drawH, SHEET_SIZE, SHEET_SIZE);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (this.isHovered()) pressed = true;
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        pressed = false;
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    protected void appendClickableNarrations(NarrationMessageBuilder builder) {}
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnSkipEnd.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnSkipEnd extends IconButton {
+    public BtnSkipEnd() {
+        super(
+            30, 30,
+            230, 0,
+            30, 30,
+            230, 30
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnArrowRightBeige.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnArrowRightBeige extends IconButton {
+    public BtnArrowRightBeige() {
+        super(
+            30, 30,
+            30, 60,
+            30, 30,
+            30, 90
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/ScrollBarHandle.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class ScrollBarHandle extends IconButton {
+    public ScrollBarHandle() {
+        super(
+            10, 20,
+            500, 100,
+            10, 20,
+            500, 120
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnArrowRightLarge.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnArrowRightLarge extends IconButton {
+    public BtnArrowRightLarge() {
+        super(
+            30, 30,
+            30, 0,
+            30, 30,
+            30, 30
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/player/DBIPlayerData.java
+Conteúdo:
+package com.bernardo.dbi.player;
+
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.NbtCompound;
+
+public class DBIPlayerData {
+
+    private static final String KEY_RACE   = "dbi_race";
+    private static final String KEY_AGE    = "dbi_age";
+    private static final String KEY_STYLE  = "dbi_style";
+
+    // ── Leitura ───────────────────────────────────────────────────────────────
+
+    public static Race getRace(PlayerEntity player) {
+        NbtCompound nbt = player.writeNbt(new NbtCompound());
+        if (!nbt.contains(KEY_RACE)) return Race.SAIYAN;
+        try { return Race.valueOf(nbt.getString(KEY_RACE)); }
+        catch (IllegalArgumentException e) { return Race.SAIYAN; }
+    }
+
+    public static AgeStage getAge(PlayerEntity player) {
+        NbtCompound nbt = player.writeNbt(new NbtCompound());
+        if (!nbt.contains(KEY_AGE)) return AgeStage.ADULT;
+        try { return AgeStage.valueOf(nbt.getString(KEY_AGE)); }
+        catch (IllegalArgumentException e) { return AgeStage.ADULT; }
+    }
+
+    public static FightingStyle getStyle(PlayerEntity player) {
+        NbtCompound nbt = player.writeNbt(new NbtCompound());
+        if (!nbt.contains(KEY_STYLE)) return FightingStyle.WARRIOR;
+        try { return FightingStyle.valueOf(nbt.getString(KEY_STYLE)); }
+        catch (IllegalArgumentException e) { return FightingStyle.WARRIOR; }
+    }
+
+    // ── Escrita ───────────────────────────────────────────────────────────────
+
+    public static void setRace(PlayerEntity player, Race race) {
+        NbtCompound nbt = player.writeNbt(new NbtCompound());
+        nbt.putString(KEY_RACE, race.name());
+        player.readNbt(nbt);
+    }
+
+    public static void setAge(PlayerEntity player, AgeStage age) {
+        NbtCompound nbt = player.writeNbt(new NbtCompound());
+        nbt.putString(KEY_AGE, age.name());
+        player.readNbt(nbt);
+    }
+
+    public static void setStyle(PlayerEntity player, FightingStyle style) {
+        NbtCompound nbt = player.writeNbt(new NbtCompound());
+        nbt.putString(KEY_STYLE, style.name());
+        player.readNbt(nbt);
+    }
+
+    // ── Stats finais ─────────────────────────────────────────────────────────
+
+    public static float getFinalDamage(PlayerEntity player) {
+        return PlayerStats.getDamage(getRace(player), getAge(player), getStyle(player));
+    }
+
+    public static float getFinalDefense(PlayerEntity player) {
+        return PlayerStats.getDefense(getRace(player), getAge(player), getStyle(player));
+    }
+
+    public static float getFinalSize(PlayerEntity player) {
+        return PlayerStats.getSize(getAge(player));
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/player/PlayerStats.java
+Conteúdo:
+package com.bernardo.dbi.player;
+
+public class PlayerStats {
+
+    public static float getDamage(Race race, AgeStage age, FightingStyle style) {
+        return race.damageMultiplier * age.damageMultiplier * style.damageMultiplier;
+    }
+
+    public static float getDefense(Race race, AgeStage age, FightingStyle style) {
+        return race.defenseMultiplier * age.defenseMultiplier * style.defenseMultiplier;
+    }
+
+    public static float getSize(AgeStage age) {
+        return age.sizeMultiplier;
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/player/AgeStage.java
+Conteúdo:
+package com.bernardo.dbi.player;
+
+public enum AgeStage {
+    CHILD (0.50f, 0.60f, 1.00f),
+    YOUNG (0.75f, 1.20f, 1.00f),
+    ADULT (1.00f, 1.00f, 1.00f),
+    OLD   (1.00f, 1.00f, 0.70f);
+
+    public final float sizeMultiplier;
+    public final float damageMultiplier;
+    public final float defenseMultiplier;
+
+    AgeStage(float size, float damage, float defense) {
+        this.sizeMultiplier    = size;
+        this.damageMultiplier  = damage;
+        this.defenseMultiplier = defense;
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/player/FightingStyle.java
+Conteúdo:
+package com.bernardo.dbi.player;
+
+public enum FightingStyle {
+    MARTIAL_ARTIST(1.15f, 1.10f),
+    WARRIOR       (1.20f, 0.95f),
+    SPIRITUALIST  (0.90f, 1.20f);
+
+    public final float damageMultiplier;
+    public final float defenseMultiplier;
+
+    FightingStyle(float damage, float defense) {
+        this.damageMultiplier  = damage;
+        this.defenseMultiplier = defense;
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/player/Race.java
+Conteúdo:
+package com.bernardo.dbi.player;
+
+public enum Race {
+    SAIYAN    (1.20f, 1.05f),
+    HALF_SAIYAN(1.20f, 1.05f),
+    NAMEKIAN  (1.05f, 1.25f),
+    ARCOSIAN  (1.15f, 1.15f);
+
+    public final float damageMultiplier;
+    public final float defenseMultiplier;
+
+    Race(float damage, float defense) {
+        this.damageMultiplier  = damage;
+        this.defenseMultiplier = defense;
+    }
+}
+
 ----------------------------------------
 Arquivo: src/main/java/com/bernardo/dbi/Dbi.java
 Conteúdo:
 package com.bernardo.dbi;
 
+import com.bernardo.dbi.registry.DBIBlocks;
+import com.bernardo.dbi.registry.DBICreativeTab;
+import com.bernardo.dbi.registry.DBIItems;
 import net.fabricmc.api.ModInitializer;
 
 public class Dbi implements ModInitializer {
@@ -26,10 +966,80 @@ public class Dbi implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        // Código de inicialização aqui
-        System.out.println("Dragon Block Infinity inicializado!");
+        DBIBlocks.initialize();
+        DBIItems.initialize();
+        DBICreativeTab.initialize();
     }
 }
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/block/DragonBallBlock.java
+Conteúdo:
+package com.bernardo.dbi.block;
+
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.ShapeContext;
+import net.minecraft.block.HorizontalFacingBlock;
+import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.state.StateManager;
+import net.minecraft.state.property.DirectionProperty;
+import net.minecraft.state.property.Properties;
+import net.minecraft.util.BlockMirror;
+import net.minecraft.util.BlockRotation;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.util.shape.VoxelShapes;
+import net.minecraft.world.BlockView;
+
+public class DragonBallBlock extends Block {
+
+    public static final DirectionProperty FACING = HorizontalFacingBlock.FACING;
+
+    private static final VoxelShape SHAPE = Block.createCuboidShape(3, 3, 3, 13, 13, 13);
+
+    public DragonBallBlock(Settings settings) {
+        super(settings);
+        setDefaultState(getStateManager().getDefaultState().with(FACING, Direction.NORTH));
+    }
+
+    @Override
+    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+        builder.add(FACING);
+    }
+
+    @Override
+    public BlockState getPlacementState(ItemPlacementContext ctx) {
+        return getDefaultState().with(FACING, ctx.getHorizontalPlayerFacing().getOpposite());
+    }
+
+    @Override
+    public BlockState rotate(BlockState state, BlockRotation rotation) {
+        return state.with(FACING, rotation.rotate(state.get(FACING)));
+    }
+
+    @Override
+    public BlockState mirror(BlockState state, BlockMirror mirror) {
+        return state.rotate(mirror.getRotation(state.get(FACING)));
+    }
+
+    @Override
+    public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
+        return SHAPE;
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
+        return SHAPE;
+    }
+
+    @Override
+    public VoxelShape getCameraCollisionShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
+        return VoxelShapes.empty();
+    }
+}
+
 ----------------------------------------
 === ARQUIVOS JSON ===
 Arquivo: src/main/resources/assets/dragonblockinfinity/lang/pt_br.json
@@ -2480,12 +3490,26 @@ Conteúdo:
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/blockstates/block_dragonball4.json
 Conteúdo:
-{"variants":{"":{"model":"dragonblockinfinity:block/block_dragonblock4"}}}
+{
+  "variants": {
+    "facing=north": { "model": "dragonblockinfinity:block/block_dragonblock4" },
+    "facing=south": { "model": "dragonblockinfinity:block/block_dragonblock4", "y": 180 },
+    "facing=west":  { "model": "dragonblockinfinity:block/block_dragonblock4", "y": 270 },
+    "facing=east":  { "model": "dragonblockinfinity:block/block_dragonblock4", "y": 90 }
+  }
+}
 
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/blockstates/block_dragonball2.json
 Conteúdo:
-{"variants":{"":{"model":"dragonblockinfinity:block/block_dragonblock2"}}}
+{
+  "variants": {
+    "facing=north": { "model": "dragonblockinfinity:block/block_dragonblock2" },
+    "facing=south": { "model": "dragonblockinfinity:block/block_dragonblock2", "y": 180 },
+    "facing=west":  { "model": "dragonblockinfinity:block/block_dragonblock2", "y": 270 },
+    "facing=east":  { "model": "dragonblockinfinity:block/block_dragonblock2", "y": 90 }
+  }
+}
 
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/blockstates/dirty_stone.json
@@ -2500,7 +3524,14 @@ Conteúdo:
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/blockstates/block_dragonball7.json
 Conteúdo:
-{"variants":{"":{"model":"dragonblockinfinity:block/block_dragonblock7"}}}
+{
+  "variants": {
+    "facing=north": { "model": "dragonblockinfinity:block/block_dragonblock7" },
+    "facing=south": { "model": "dragonblockinfinity:block/block_dragonblock7", "y": 180 },
+    "facing=west":  { "model": "dragonblockinfinity:block/block_dragonblock7", "y": 270 },
+    "facing=east":  { "model": "dragonblockinfinity:block/block_dragonblock7", "y": 90 }
+  }
+}
 
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/blockstates/namek_dirty.json
@@ -2510,17 +3541,38 @@ Conteúdo:
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/blockstates/block_dragonball3.json
 Conteúdo:
-{"variants":{"":{"model":"dragonblockinfinity:block/block_dragonblock3"}}}
+{
+  "variants": {
+    "facing=north": { "model": "dragonblockinfinity:block/block_dragonblock3" },
+    "facing=south": { "model": "dragonblockinfinity:block/block_dragonblock3", "y": 180 },
+    "facing=west":  { "model": "dragonblockinfinity:block/block_dragonblock3", "y": 270 },
+    "facing=east":  { "model": "dragonblockinfinity:block/block_dragonblock3", "y": 90 }
+  }
+}
 
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/blockstates/block_dragonball1.json
 Conteúdo:
-{"variants":{"":{"model":"dragonblockinfinity:block/block_dragonblock1"}}}
+{
+  "variants": {
+    "facing=north": { "model": "dragonblockinfinity:block/block_dragonblock1" },
+    "facing=south": { "model": "dragonblockinfinity:block/block_dragonblock1", "y": 180 },
+    "facing=west":  { "model": "dragonblockinfinity:block/block_dragonblock1", "y": 270 },
+    "facing=east":  { "model": "dragonblockinfinity:block/block_dragonblock1", "y": 90 }
+  }
+}
 
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/blockstates/block_dragonball6.json
 Conteúdo:
-{"variants":{"":{"model":"dragonblockinfinity:block/block_dragonblock6"}}}
+{
+  "variants": {
+    "facing=north": { "model": "dragonblockinfinity:block/block_dragonblock6" },
+    "facing=south": { "model": "dragonblockinfinity:block/block_dragonblock6", "y": 180 },
+    "facing=west":  { "model": "dragonblockinfinity:block/block_dragonblock6", "y": 270 },
+    "facing=east":  { "model": "dragonblockinfinity:block/block_dragonblock6", "y": 90 }
+  }
+}
 
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/blockstates/namek_grass.json
@@ -2530,7 +3582,28 @@ Conteúdo:
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/blockstates/block_dragonball5.json
 Conteúdo:
-{"variants":{"":{"model":"dragonblockinfinity:block/block_dragonblock5"}}}
+{
+  "variants": {
+    "facing=north": { "model": "dragonblockinfinity:block/block_dragonblock5" },
+    "facing=south": { "model": "dragonblockinfinity:block/block_dragonblock5", "y": 180 },
+    "facing=west":  { "model": "dragonblockinfinity:block/block_dragonblock5", "y": 270 },
+    "facing=east":  { "model": "dragonblockinfinity:block/block_dragonblock5", "y": 90 }
+  }
+}
+
+----------------------------------------
+Arquivo: src/main/resources/dragonblockinfinity.mixins.json
+Conteúdo:
+{
+    "required": true,
+    "package": "com.bernardo.dbi.mixin",
+    "compatibilityLevel": "JAVA_17",
+    "mixins": [],
+    "client": [],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}
 
 ----------------------------------------
 Arquivo: src/main/resources/fabric.mod.json
@@ -2538,7 +3611,7 @@ Conteúdo:
 {
   "schemaVersion": 1,
   "id": "dragonblockinfinity",
-  "version": "${version}",
+  "version": "1.0.0",
   "name": "Dragon Block Infinity",
   "description": "Dragon Block mod inspirado em Dragon Ball Z",
   "authors": [
