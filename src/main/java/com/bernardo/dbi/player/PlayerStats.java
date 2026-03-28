@@ -10,7 +10,19 @@ public class PlayerStats {
         return race.defenseMultiplier * age.defenseMultiplier * style.defenseMultiplier;
     }
 
-    public static float getSize(AgeStage age) {
-        return age.sizeMultiplier;
+    /**
+     * Tamanho combinado: Raça × Idade
+     * Exemplo: Saiyan Criança = 1.00 × 0.45 = 0.45
+     */
+    public static float getSize(Race race, AgeStage age) {
+        return race.sizeMultiplier * age.sizeMultiplier;
+    }
+
+    /**
+     * Altura dos olhos combinada: Raça × Idade
+     * Exemplo: Namekiano Jovem = 1.05 × 0.75 = 0.7875
+     */
+    public static float getEyeHeight(Race race, AgeStage age) {
+        return race.eyeHeightMultiplier * age.eyeHeightMultiplier;
     }
 }

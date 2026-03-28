@@ -16,6 +16,7 @@ import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.BlockView;
 
+@SuppressWarnings("deprecation")
 public class DragonBallBlock extends Block {
 
     public static final DirectionProperty FACING = HorizontalFacingBlock.FACING;
@@ -34,7 +35,9 @@ public class DragonBallBlock extends Block {
 
     @Override
     public BlockState getPlacementState(ItemPlacementContext ctx) {
-        return getDefaultState().with(FACING, ctx.getHorizontalPlayerFacing().getOpposite());
+        // Orient the dragon ball based on player yaw on placement (any horizontal direction)
+        Direction facing = Direction.fromRotation(ctx.getPlayerYaw());
+        return getDefaultState().with(FACING, facing);
     }
 
     @Override

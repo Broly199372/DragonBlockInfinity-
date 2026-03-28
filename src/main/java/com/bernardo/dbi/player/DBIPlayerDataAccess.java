@@ -9,6 +9,7 @@ public interface DBIPlayerDataAccess {
     Identifier    dbi_getHairTexture();
     Identifier    dbi_getEyeTexture();
     Identifier    dbi_getNoseTexture();
+    Identifier    dbi_getMouthTexture();
 
     void dbi_setRace(Race race);
     void dbi_setAge(AgeStage age);
@@ -16,4 +17,5 @@ public interface DBIPlayerDataAccess {
     void dbi_setHairTexture(Identifier texture);
     void dbi_setEyeTexture(Identifier texture);
     void dbi_setNoseTexture(Identifier texture);
+    void dbi_setMouthTexture(Identifier texture);
 }

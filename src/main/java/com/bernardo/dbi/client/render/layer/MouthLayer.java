@@ -12,13 +12,13 @@ import net.minecraft.client.render.entity.model.PlayerEntityModel;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 
-public class HairLayer extends FeatureRenderer<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> {
+public class MouthLayer extends FeatureRenderer<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> {
 
-    private final DBIPlayerModel<AbstractClientPlayerEntity> hairModel;
+    private final DBIPlayerModel<AbstractClientPlayerEntity> mouthModel;
 
-    public HairLayer(FeatureRendererContext<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> ctx) {
+    public MouthLayer(FeatureRendererContext<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> ctx) {
         super(ctx);
-        this.hairModel = new DBIPlayerModel<>(
+        this.mouthModel = new DBIPlayerModel<>(
             DBIPlayerModel.getTexturedModelData().createModel()
         );
     }
@@ -30,22 +30,16 @@ public class HairLayer extends FeatureRenderer<AbstractClientPlayerEntity, Playe
                        float tickDelta, float animationProgress,
                        float headYaw, float headPitch) {
 
-        Identifier texture = DBIPlayerData.getHairTexture(player);
+        Identifier texture = DBIPlayerData.getMouthTexture(player);
         if (texture == null) return;
 
-        // Não renderiza o hair_base como cabelo externo; ele é parte de base interna.
-        if (texture.getPath().endsWith("hair_base.png")) return;
-
         // Sincroniza o modelo com as animações do player
-        hairModel.setAngles(player, limbAngle, limbDistance, animationProgress, headYaw, headPitch);
-        hairModel.handSwingProgress = getContextModel().handSwingProgress;
-        hairModel.riding = getContextModel().riding;
-        hairModel.child = getContextModel().child;
+        mouthModel.setAngles(player, limbAngle, limbDistance, animationProgress, headYaw, headPitch);
+        mouthModel.handSwingProgress = getContextModel().handSwingProgress;
+        mouthModel.riding = getContextModel().riding;
+        mouthModel.child = getContextModel().child;
 
-        // RenderLayer.getEntityCutoutNoCull para transparência sem distorção
         var vertexConsumer = vertexConsumers.getBuffer(RenderLayer.getEntityCutoutNoCull(texture));
-        
-        // Renderiza só o cabelo (head) - evita sobreposição de hat em cima
-        hairModel.head.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1f, 1f, 1f, 1f);
+        mouthModel.head.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1f, 1f, 1f, 1f);
     }
 }
