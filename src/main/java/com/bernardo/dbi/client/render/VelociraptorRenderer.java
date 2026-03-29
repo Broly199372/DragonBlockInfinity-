@@ -8,7 +8,7 @@ import net.minecraft.util.Identifier;
 
 public class VelociraptorRenderer extends MobEntityRenderer<VelociraptorEntity, VelociraptorModel<VelociraptorEntity>> {
 
-    private static final Identifier TEXTURE = new Identifier("dragonblockinfinity", "textures/entity/velociraptor.png");
+    private static final Identifier TEXTURE = new Identifier("dragonblockinfinity", "textures/npc/dinosauro1.png");
 
     public VelociraptorRenderer(EntityRendererFactory.Context context) {
         super(context, new VelociraptorModel<>(context.getPart(VelociraptorModel.LAYER)), 0.5f);

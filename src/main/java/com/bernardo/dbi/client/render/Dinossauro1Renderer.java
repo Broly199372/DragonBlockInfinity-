@@ -8,7 +8,7 @@ import net.minecraft.util.Identifier;
 
 public class Dinossauro1Renderer extends MobEntityRenderer<Dinossauro1Entity, Dinossauro1Model<Dinossauro1Entity>> {
 
-    private static final Identifier TEXTURE = new Identifier("dragonblockinfinity", "textures/entity/dinossauro1.png");
+    private static final Identifier TEXTURE = new Identifier("dragonblockinfinity", "textures/npc/dinosauro1.png");
 
     public Dinossauro1Renderer(EntityRendererFactory.Context context) {
         super(context, new Dinossauro1Model<>(context.getPart(Dinossauro1Model.LAYER)), 0.6f);
