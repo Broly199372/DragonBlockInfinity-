@@ -19,8 +19,11 @@ public abstract class LivingEntityEyeHeightMixin {
 
         PlayerEntity player = (PlayerEntity)(Object) this;
         float eyeHeightScale = DBIPlayerData.getEyeHeightScale(player);
-        if (eyeHeightScale == 1.0f) return;
+        if (eyeHeightScale <= 0.0f) return;
 
-        cir.setReturnValue(cir.getReturnValue() * eyeHeightScale);
+        // Apply eye height scaling (adjusted for 128x128 texture proportions)
+        float baseEyeHeight = cir.getReturnValue();
+        float scaledEyeHeight = baseEyeHeight * eyeHeightScale;
+        cir.setReturnValue(scaledEyeHeight);
     }
 }

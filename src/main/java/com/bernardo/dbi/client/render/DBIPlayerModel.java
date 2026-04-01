@@ -14,8 +14,13 @@ public class DBIPlayerModel<T extends LivingEntity> extends BipedEntityModel<T> 
     public static final int TEX_W = 64;
     public static final int TEX_H = 64;
 
+    public final ModelPart leftEar;
+    public final ModelPart rightEar;
+
     public DBIPlayerModel(ModelPart root) {
         super(root);
+        this.leftEar = root.getChild("left_ear");
+        this.rightEar = root.getChild("right_ear");
     }
 
     public static TexturedModelData getTexturedModelData() {
@@ -38,6 +43,17 @@ public class DBIPlayerModel<T extends LivingEntity> extends BipedEntityModel<T> 
                 // Overlay adicional para cabelos
                 .uv(0, 32).cuboid(-4, -8, -4, 8, 8, 0, new Dilation(0.51f)),
             ModelTransform.pivot(0, 0, 0));
+
+        // Adicionar orelhas para Namekians (invisíveis por padrão, ativadas por raça)
+        root.addChild("left_ear",
+            ModelPartBuilder.create()
+                .uv(56, 0).cuboid(0, -10, -1, 2, 4, 1, new Dilation(0f)),
+            ModelTransform.pivot(4, -2, 0));
+
+        root.addChild("right_ear",
+            ModelPartBuilder.create()
+                .uv(56, 0).mirrored().cuboid(-2, -10, -1, 2, 4, 1, new Dilation(0f)),
+            ModelTransform.pivot(-4, -2, 0));
 
         // BODY — torso
         root.addChild(EntityModelPartNames.BODY,
@@ -90,5 +106,27 @@ public class DBIPlayerModel<T extends LivingEntity> extends BipedEntityModel<T> 
         this.leftArm.render(matrices, vertices, light, overlay, red, green, blue, alpha);
         this.rightLeg.render(matrices, vertices, light, overlay, red, green, blue, alpha);
         this.leftLeg.render(matrices, vertices, light, overlay, red, green, blue, alpha);
+    }
+
+    /**
+     * Renderiza orelhas para raças que as possuem (ex: Namekians)
+     */
+    public void renderEars(MatrixStack matrices, VertexConsumer vertices, int light, int overlay,
+                          float red, float green, float blue, float alpha) {
+        this.leftEar.render(matrices, vertices, light, overlay, red, green, blue, alpha);
+        this.rightEar.render(matrices, vertices, light, overlay, red, green, blue, alpha);
+    }
+
+    /**
+     * Renderiza a cabeça com escala DBI
+     */
+    public void renderHeadWithScale(MatrixStack matrices, VertexConsumer vertices, int light, int overlay,
+                                   float red, float green, float blue, float alpha, float scale) {
+        matrices.push();
+        if (scale != 1.0f) {
+            matrices.scale(scale, scale, scale);
+        }
+        renderHeadOnly(matrices, vertices, light, overlay, red, green, blue, alpha);
+        matrices.pop();
     }
 }

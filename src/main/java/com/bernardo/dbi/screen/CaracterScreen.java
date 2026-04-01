@@ -1,16 +1,15 @@
 package com.bernardo.dbi.screen;
 
-import com.bernardo.dbi.player.DBIPlayerData;
-import com.bernardo.dbi.screen.widget.BtnArrowLeftSmall;
-import com.bernardo.dbi.screen.widget.BtnArrowRightSmall;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-
-import java.util.List;
+import com.bernardo.dbi.screen.widget.BtnArrowRightSmall;
+import com.bernardo.dbi.screen.widget.BtnArrowLeftSmall;
+import com.bernardo.dbi.screen.widget.IconButton;
+import com.bernardo.dbi.screen.widget.BtnCloseX;
 
 public class CaracterScreen extends Screen {
 
@@ -20,183 +19,64 @@ public class CaracterScreen extends Screen {
     private static final int IMG_W = 510;
     private static final int IMG_H = 318;
 
-    // Cores para melhor visual
-    private static final int COLOR_TITLE = 0xFFD700;        // Ouro
-    private static final int COLOR_VALUE = 0xFFFF00;        // Amarelo brilhante
-
     private int guiLeft, guiTop, menuW, menuH;
 
-    private static final String[] OPTIONS = {
-        "race", "age", "hair", "hair_color", "eyes", "nose", "mouth"
-    };
-
-    private final BtnArrowLeftSmall[] btnLeft  = new BtnArrowLeftSmall[OPTIONS.length];
-    private final BtnArrowRightSmall[] btnRight = new BtnArrowRightSmall[OPTIONS.length];
-
     public CaracterScreen() {
-        super(Text.literal("Criação de Personagem"));
+        super(Text.literal("DragonBlockInfinity Menu"));
     }
 
     @Override
     protected void init() {
         super.init();
 
-        PlayerEntity player = this.client.player;
-        if (player != null) {
-            applyDefaultAppearance(player);
-        }
+        float ratio = Math.min((this.width * 0.75f) / IMG_W, (this.height * 0.75f) / IMG_H);
+        menuW = (int) (IMG_W * ratio);
+        menuH = (int) (IMG_H * ratio);
+        guiLeft = (this.width - menuW) / 2;
+        guiTop = (this.height - menuH) / 2;
 
-        float ratio = Math.min(
-            (this.width  * 0.75f) / IMG_W,
-            (this.height * 0.75f) / IMG_H
-        );
-        menuW   = (int)(IMG_W * ratio);
-        menuH   = (int)(IMG_H * ratio);
-        guiLeft = (this.width  - menuW) / 2;
-        guiTop  = (this.height - menuH) / 2;
+        // Adicionar botão com textura
+        BtnCloseX btnCloseX = new BtnCloseX();
+        int btnX = guiLeft + (int)(menuW * 0.8f); // Posição relativa ao menu
+        int btnY = guiTop + (int)(menuH * 0.9f);
+        float btnScale = ratio * 0.5f; // Escala menor para o botão
+        btnCloseX.place(btnX, btnY, btnScale);
+        btnCloseX.setOnPress(() -> {
+            // Ação do botão, por exemplo, fechar a tela
+            this.close();
+        });
+        this.addDrawableChild(btnCloseX);
+       
 
-        int panelX  = guiLeft + (int)(menuW * 0.55f);
-        int panelW  = (int)(menuW * 0.42f);
-        int startY  = guiTop  + (int)(menuH * 0.12f);
-        int spacing = (int)((menuH * 0.75f) / OPTIONS.length);
-        float btnScale = Math.max(0.8f, Math.min(1.2f, ratio * 0.9f));
-
-        for (int i = 0; i < OPTIONS.length; i++) {
-            final int idx = i;
-            int rowY = startY + i * spacing + (int)((spacing - (int)(20 * btnScale)) / 2);
-
-            btnLeft[i] = new BtnArrowLeftSmall();
-            btnRight[i] = new BtnArrowRightSmall();
-
-            btnLeft[i].setOnPress(() -> cycleOption(OPTIONS[idx], -1));
-            btnRight[i].setOnPress(() -> cycleOption(OPTIONS[idx], +1));
-
-            int lx = panelX + 4;
-            int rx = panelX + panelW - (int)(20 * btnScale) - 4;
-
-            btnLeft[i].place(lx, rowY, btnScale);
-            btnRight[i].place(rx, rowY, btnScale);
-
-            this.addDrawableChild(btnLeft[i]);
-            this.addDrawableChild(btnRight[i]);
-        }
-    }
-
-    private void cycleOption(String option, int dir) {
-        PlayerEntity player = this.client.player;
-        if (player == null) return;
-
-        List<String> opts = AppearanceManager.getOptionsFor(option, DBIPlayerData.getRace(player).name());
-        if (opts.isEmpty()) return;
-
-        int current  = AppearanceManager.getCurrentValue(player, option);
-        int newValue = (current + dir + opts.size()) % opts.size();
-        AppearanceManager.updateAppearance(player, option, newValue);
     }
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         this.renderBackground(context);
 
-        // Fundo menu.png escalado com ratio correto
         context.getMatrices().push();
         context.getMatrices().translate(guiLeft, guiTop, 0);
         context.getMatrices().scale((float) menuW / IMG_W, (float) menuH / IMG_H, 1f);
         context.drawTexture(MENU, 0, 0, 0, 0, IMG_W, IMG_H, TEX_W, TEX_H);
         context.getMatrices().pop();
 
-        // Player model - renderização centralizada e proporcionada
         PlayerEntity player = this.client.player;
         if (player != null) {
-            // Posição do modelo (centro-esquerda)
-            int px    = guiLeft + (int)(menuW * 0.22f);
-            int py    = guiTop  + (int)(menuH * 0.62f);
-            
-            // Escala adaptada à altura da tela
-            int scale = (int)(Math.min(menuW, menuH) * 0.28f);
-            
-            InventoryScreen.drawEntity(
-                context, px, py, scale,
-                (float)(px - mouseX),
-                (float)(py - 10 - mouseY),
-                player
-            );
+            int px = guiLeft + menuW / 4;
+            int py = guiTop + menuH * 4 / 7;
+            int scale = (int) (Math.min(menuW, menuH) * 0.25f);
+            InventoryScreen.drawEntity(context, px, py, scale, (float) (px - mouseX), (float) (py - 10 - mouseY), player);
         }
-
-        // Título
-        context.drawCenteredTextWithShadow(
-            this.textRenderer,
-            Text.literal("✦ Criação de Personagem ✦"),
-            guiLeft + menuW / 2,
-            guiTop + 8,
-            COLOR_TITLE
-        );
-
-        // Painel de opções
-        renderOptionsPanel(context, player);
 
         super.render(context, mouseX, mouseY, delta);
     }
 
-    private void renderOptionsPanel(DrawContext context, PlayerEntity player) {
-        if (player == null) return;
-
-        int panelX  = guiLeft + (int)(menuW * 0.55f);
-        int panelW  = (int)(menuW * 0.42f);
-        int startY  = guiTop  + (int)(menuH * 0.12f);
-        int spacing = (int)((menuH * 0.75f) / OPTIONS.length);
-
-        float ratio = Math.min(
-            (this.width  * 0.75f) / IMG_W,
-            (this.height * 0.75f) / IMG_H
-        );
-        float valueScale = ratio;
-
-        String race = DBIPlayerData.getRace(player).name();
-
-        for (int i = 0; i < OPTIONS.length; i++) {
-            int rowY = startY + i * spacing;
-            int valueY = rowY + 18;
-
-            // Valor atual
-            List<String> opts = AppearanceManager.getDisplayOptionsFor(OPTIONS[i], race);
-            int val = AppearanceManager.getCurrentValue(player, OPTIONS[i]);
-            if (!opts.isEmpty()) val = (val % opts.size() + opts.size()) % opts.size();
-            String display = opts.isEmpty() ? "—" : opts.get(val);
-
-            int centerX = panelX + panelW / 2;
-            context.getMatrices().push();
-            context.getMatrices().translate(centerX, valueY, 0);
-            context.getMatrices().scale(valueScale, valueScale, 1f);
-            context.drawCenteredTextWithShadow(this.textRenderer, Text.literal(display), 0, 0, COLOR_VALUE);
-            context.getMatrices().pop();
-        }
-    }
-
-    private void applyDefaultAppearance(PlayerEntity player) {
-        // Race / Age padrão
-        if (DBIPlayerData.getRace(player) == null) {
-            DBIPlayerData.setRace(player, com.bernardo.dbi.player.Race.SAIYAN);
-        }
-        if (DBIPlayerData.getAge(player) == null) {
-            DBIPlayerData.setAge(player, com.bernardo.dbi.player.AgeStage.ADULT);
-        }
-
-        // Texturas padrão (se ainda não configuradas)
-        if (DBIPlayerData.getHairTexture(player) == null) {
-            DBIPlayerData.setHairTexture(player, new Identifier("dragonblockinfinity", "textures/hairs/hair_goku_overlay.png"));
-        }
-        if (DBIPlayerData.getEyeTexture(player) == null) {
-            DBIPlayerData.setEyeTexture(player, new Identifier("dragonblockinfinity", "textures/eyes/eye1.png"));
-        }
-        if (DBIPlayerData.getNoseTexture(player) == null) {
-            DBIPlayerData.setNoseTexture(player, new Identifier("dragonblockinfinity", "textures/nose/nose1.png"));
-        }
-        if (DBIPlayerData.getMouthTexture(player) == null) {
-            DBIPlayerData.setMouthTexture(player, new Identifier("dragonblockinfinity", "textures/mouth/mouth1.png"));
-        }
-    }
-
     @Override
-    public boolean shouldPause() { return false; }
+    public boolean shouldPause() {
+        return false;
+    }
+
+    
+
+    
 }

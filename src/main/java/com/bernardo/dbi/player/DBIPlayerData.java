@@ -25,4 +25,14 @@ public class DBIPlayerData {
     public static float getFinalDefense(PlayerEntity p) { return PlayerStats.getDefense(getRace(p), getAge(p), getStyle(p)); }
     public static float getFinalSize(PlayerEntity p)    { return PlayerStats.getSize(getRace(p), getAge(p)); }
     public static float getEyeHeightScale(PlayerEntity p) { return PlayerStats.getEyeHeight(getRace(p), getAge(p)); }
+    public static Identifier    getTailTexture(PlayerEntity p) { return ((DBIPlayerDataAccess)p).dbi_getTailTexture(); }
+    public static void setTailTexture(PlayerEntity p, Identifier t) { ((DBIPlayerDataAccess)p).dbi_setTailTexture(t); }
+    public static int getHairColor(PlayerEntity p) { return ((DBIPlayerDataAccess)p).dbi_getHairColor(); }
+    public static int getEyePupilColor(PlayerEntity p) { return ((DBIPlayerDataAccess)p).dbi_getEyePupilColor(); }
+    public static int getTailColor(PlayerEntity p) { return ((DBIPlayerDataAccess)p).dbi_getTailColor(); }
+    public static int getSkinColor(PlayerEntity p) { return ((DBIPlayerDataAccess)p).dbi_getSkinColor(); }
+    public static void setHairColor(PlayerEntity p, int c) { ((DBIPlayerDataAccess)p).dbi_setHairColor(c); }
+    public static void setEyePupilColor(PlayerEntity p, int c) { ((DBIPlayerDataAccess)p).dbi_setEyePupilColor(c); }
+    public static void setTailColor(PlayerEntity p, int c) { ((DBIPlayerDataAccess)p).dbi_setTailColor(c); }
+    public static void setSkinColor(PlayerEntity p, int c) { ((DBIPlayerDataAccess)p).dbi_setSkinColor(c); }
 }

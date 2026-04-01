@@ -9,27 +9,34 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+/**
+ * Mixin para PlayerEntity que ajusta as dimensões físicas do jogador baseado na escala de tamanho DBI.
+ * Isso afeta a largura e altura do hitbox do jogador, permitindo tamanhos personalizados.
+ */
 @Mixin(PlayerEntity.class)
 public abstract class PlayerEntitySizeMixin {
 
-    // Dimensões padrão do Minecraft: 0.6 largura, 1.8 altura
-    private static final float BASE_WIDTH  = 0.6f;
-    private static final float BASE_HEIGHT = 1.8f;
-
-    // Altura dos olhos padrão (aproximadamente 1.62 do topo)
-    private static final float BASE_EYE_HEIGHT = 1.62f;
-
+    // Dimensões padrão do Minecraft para
+    /**
+     * Injeta no método getDimensions para modificar o tamanho do jogador.
+     * Aplica a escala de tamanho DBI a todas as poses para consistência.
+     * Se a escala for 1.0 (padrão), não modifica nada para otimização.
+     */
     @Inject(method = "getDimensions", at = @At("RETURN"), cancellable = true)
     private void dbi_applySize(EntityPose pose, CallbackInfoReturnable<EntityDimensions> cir) {
-        if (pose != EntityPose.STANDING) return;
         PlayerEntity self = (PlayerEntity)(Object) this;
         float sizeScale = DBIPlayerData.getFinalSize(self);
 
-        if (sizeScale == 1.0f) return;
+        // Validação: escala deve ser positiva e diferente de 1.0
+        if (sizeScale <= 0.0f || sizeScale == 1.0f) return;
 
+        // Obtém as dimensões originais
+        EntityDimensions original = cir.getReturnValue();
+
+        // Aplica a escala mantendo as proporções
         cir.setReturnValue(EntityDimensions.changing(
-            BASE_WIDTH * sizeScale,
-            BASE_HEIGHT * sizeScale
+            original.width * sizeScale,
+            original.height * sizeScale
         ));
     }
 
