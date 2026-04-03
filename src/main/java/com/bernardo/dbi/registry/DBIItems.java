@@ -1,5 +1,6 @@
 package com.bernardo.dbi.registry;
 
+import com.bernardo.dbi.item.NinbusItem;
 import net.minecraft.block.Block;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.FoodComponent;
@@ -18,34 +19,34 @@ public class DBIItems {
     public static final Item BLOCK_DRAGONBALL6 = registerBlockItem("block_dragonball6", DBIBlocks.BLOCK_DRAGONBALL6);
     public static final Item BLOCK_DRAGONBALL7 = registerBlockItem("block_dragonball7", DBIBlocks.BLOCK_DRAGONBALL7);
 
-    public static final Item NAMEK_GRASS              = registerBlockItem("namek_grass",              DBIBlocks.NAMEK_GRASS);
-    public static final Item NAMEK_DIRTY              = registerBlockItem("namek_dirty",              DBIBlocks.NAMEK_DIRTY);
-    public static final Item DIRTY_STONE              = registerBlockItem("dirty_stone",              DBIBlocks.DIRTY_STONE);
-    public static final Item DIRTY_STONE_COBBLESTONE  = registerBlockItem("dirty_stone_cobblestone",  DBIBlocks.DIRTY_STONE_COBBLESTONE);
+    public static final Item NAMEK_GRASS             = registerBlockItem("namek_grass",             DBIBlocks.NAMEK_GRASS);
+    public static final Item NAMEK_DIRTY             = registerBlockItem("namek_dirty",             DBIBlocks.NAMEK_DIRTY);
+    public static final Item DIRTY_STONE             = registerBlockItem("dirty_stone",             DBIBlocks.DIRTY_STONE);
+    public static final Item DIRTY_STONE_COBBLESTONE = registerBlockItem("dirty_stone_cobblestone", DBIBlocks.DIRTY_STONE_COBBLESTONE);
 
     public static final Item SENZU = register("senzu",
-            new Item(new Item.Settings()
-                    .food(new FoodComponent.Builder()
-                            .hunger(10)
-                            .saturationModifier(1.0f)
-                            .alwaysEdible()
-                            .build())));
+        new Item(new Item.Settings()
+            .food(new FoodComponent.Builder()
+                .hunger(10)
+                .saturationModifier(1.0f)
+                .alwaysEdible()
+                .build())));
 
     public static final Item DINO_MEAT = register("dino_meat",
-            new Item(new Item.Settings()
-                    .food(new FoodComponent.Builder()
-                            .hunger(3)
-                            .saturationModifier(0.3f)
-                            .build())));
+        new Item(new Item.Settings()
+            .food(new FoodComponent.Builder()
+                .hunger(3)
+                .saturationModifier(0.3f)
+                .build())));
 
     public static final Item DINO_MEAT_COOKED = register("dino_meat_cooked",
-            new Item(new Item.Settings()
-                    .food(new FoodComponent.Builder()
-                            .hunger(8)
-                            .saturationModifier(0.8f)
-                            .build())));
+        new Item(new Item.Settings()
+            .food(new FoodComponent.Builder()
+                .hunger(8)
+                .saturationModifier(0.8f)
+                .build())));
 
-    public static final Item NIMBUS  = register("nimbus",  new Item(new Item.Settings().maxCount(1)));
+    public static final Item NIMBUS  = register("nimbus",  new NinbusItem(new Item.Settings().maxCount(1)));
     public static final Item RADAR   = register("radar",   new Item(new Item.Settings().maxCount(1)));
     public static final Item PESO    = register("peso",    new Item(new Item.Settings().maxCount(16)));
     public static final Item SCOUTER = register("scouter", new Item(new Item.Settings().maxCount(1)));

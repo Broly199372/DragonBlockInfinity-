@@ -19,6 +19,8 @@ public class CaracterScreen extends Screen {
     private static final int IMG_W = 510;
     private static final int IMG_H = 318;
 
+    private int btnX, btnY;
+
     private int guiLeft, guiTop, menuW, menuH;
 
     public CaracterScreen() {
@@ -40,7 +42,7 @@ public class CaracterScreen extends Screen {
         int btnX = guiLeft + (int)(menuW * 0.8f); // Posição relativa ao menu
         int btnY = guiTop + (int)(menuH * 0.9f);
         
-        btnCloseXLarge.place(btnX, btnY, btnScale);
+        btnCloseXLarge.place(btnX, btnY, ratio);
         btnCloseXLarge.setOnPress(() -> {
             // Ação do botão, por exemplo, fechar a tela
             this.close();

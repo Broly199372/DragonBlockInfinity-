@@ -9,7 +9,7 @@ import net.minecraft.util.Identifier;
 public abstract class IconButton extends ClickableWidget {
 
     private static final Identifier ICONS = new Identifier("dragonblockinfinity", "textures/gui/icons_btn.png");
-    private static final int SHEET_SIZE = 512;
+    private static final int SHEET_SIZE = 256;
 
     protected final int wNormal, hNormal;
     protected final int uNormal, vNormal;
@@ -18,6 +18,7 @@ public abstract class IconButton extends ClickableWidget {
 
     private float scale = 1.0f;
     private boolean pressed = false;
+    private boolean locked = false;
     private Runnable onPress = null;
 
     public IconButton(
@@ -31,8 +32,8 @@ public abstract class IconButton extends ClickableWidget {
         this.hNormal  = hNormal;
         this.uNormal  = uNormal;
         this.vNormal  = vNormal;
-        this.wPressed  = wPressed;
-        this.hPressed  = hPressed;
+        this.wPressed = wPressed;
+        this.hPressed = hPressed;
         this.uPressed = uPressed;
         this.vPressed = vPressed;
     }
@@ -43,6 +44,14 @@ public abstract class IconButton extends ClickableWidget {
         this.setY(y);
         this.width  = Math.max(1, Math.round(wNormal * scale));
         this.height = Math.max(1, Math.round(hNormal * scale));
+    }
+
+    public void setLocked(boolean locked) {
+        this.locked = locked;
+    }
+
+    public boolean isLocked() {
+        return locked;
     }
 
     @Override
@@ -56,12 +65,14 @@ public abstract class IconButton extends ClickableWidget {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (locked) return false;
         if (this.isHovered()) pressed = true;
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (locked) return false;
         pressed = false;
         if (this.isHovered() && onPress != null) {
             onPress.run();

@@ -1,6 +1,77 @@
 {
-  "mod_id": "dragonblockinfinity",
-  "texture_path": "textures/item/blocks/item_dirty_stone.png",
-  "texture_name": "item_dirty_stone",
-  "parent": "dragonblockinfinity:block/namek_stone"
+    "mod_id": "dragonblockinfinity",
+    "texture_path": "textures/item/blocks/item_dirty_stone.png",
+    "texture_name": "item_dirty_stone",
+    "parent": "dragonblockinfinity:block/namek_stone",
+    "display": {
+        "gui": {
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        "ground": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "fixed": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "firstperson_righthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "rotation": [
+                0,
+                90,
+                0
+            ],
+            "translation": [
+                0,
+                10,
+                0
+            ]
+        },
+        "firstperson_lefthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "rotation": [
+                0,
+                90,
+                0
+            ],
+            "translation": [
+                0,
+                10,
+                0
+            ]
+        },
+        "thirdperson_righthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "thirdperson_lefthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        }
+    }
 }

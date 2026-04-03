@@ -1,12 +1,11 @@
 package com.bernardo.dbi.screen.widget;
-
 public class BtnArrowRightSmall extends IconButton {
     public BtnArrowRightSmall() {
         super(
-            20, 20,
-            80, 0,
-            20, 20,
-            80, 20
+            10, 10,
+            40, 0,
+            10, 10,
+            40, 10
         );
     }
 }

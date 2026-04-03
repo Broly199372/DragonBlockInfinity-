@@ -1,4 +1,27 @@
 === ARQUIVOS JAVA ===
+Arquivo: src/main/java/com/bernardo/dbi/registry/DBIEntities.java
+Conteúdo:
+package com.bernardo.dbi.registry;
+
+import com.bernardo.dbi.Dbi;
+
+
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
+import net.minecraft.entity.EntityDimensions;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.SpawnGroup;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.util.Identifier;
+
+public class DBIEntities {
+
+    public static void initialize() {
+        
+    }
+}
+----------------------------------------
 Arquivo: src/main/java/com/bernardo/dbi/registry/DBIItems.java
 Conteúdo:
 package com.bernardo.dbi.registry;
@@ -48,7 +71,7 @@ public class DBIItems {
                             .saturationModifier(0.8f)
                             .build())));
 
-    public static final Item NIMBUS  = register("nimbus",  new Item(new Item.Settings().maxCount(1)));
+    public static final Item NINBUS  = register("ninbus",  new Item(new Item.Settings().maxCount(1)));
     public static final Item RADAR   = register("radar",   new Item(new Item.Settings().maxCount(1)));
     public static final Item PESO    = register("peso",    new Item(new Item.Settings().maxCount(16)));
     public static final Item SCOUTER = register("scouter", new Item(new Item.Settings().maxCount(1)));
@@ -100,7 +123,7 @@ public class DBICreativeTab {
                         entries.add(DBIItems.SENZU);
                         entries.add(DBIItems.DINO_MEAT);
                         entries.add(DBIItems.DINO_MEAT_COOKED);
-                        entries.add(DBIItems.NIMBUS);
+                        entries.add(DBIItems.NINBUS);
                         entries.add(DBIItems.RADAR);
                         entries.add(DBIItems.PESO);
                         entries.add(DBIItems.SCOUTER);
@@ -110,6 +133,31 @@ public class DBICreativeTab {
     public static void initialize() {}
 }
 
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/registry/DBISounds.java
+Conteúdo:
+package com.bernardo.dbi.registry;
+
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.util.Identifier;
+import com.bernardo.dbi.Dbi;
+
+public class DBISounds {
+
+    public static final SoundEvent DINO_STEP = registerSoundEvent("passos");
+
+    private static SoundEvent registerSoundEvent(String id) {
+        Identifier identifier = new Identifier(Dbi.MOD_ID, id);
+        return Registry.register(Registries.SOUND_EVENT, identifier, 
+            SoundEvent.of(identifier));
+    }
+
+    public static void initialize() {
+        // Apenas para forçar o carregamento da classe
+    }
+}
 ----------------------------------------
 Arquivo: src/main/java/com/bernardo/dbi/registry/DBIBlocks.java
 Conteúdo:
@@ -217,6 +265,187 @@ public class DBIBlocks {
 }
 
 ----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/alinhamento/AlinhamentoHelper.java
+Conteúdo:
+package com.bernardo.dbi.alinhamento;
+
+import net.minecraft.entity.player.PlayerEntity;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+public class AlinhamentoHelper {
+
+    private static final Map<UUID, PlayerData> dados = new HashMap<>();
+
+    public static void registrar(PlayerEntity player, PlayerData data) {
+        dados.put(player.getUuid(), data);
+    }
+
+    public static String getAlinhamento(PlayerEntity player) {
+        PlayerData data = dados.get(player.getUuid());
+        if (data == null) return "indefinido";
+        return data.getAlinhamento();
+    }
+
+    public static boolean isBom(PlayerEntity player) {
+        return getAlinhamento(player).equals("bom");
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/alinhamento/PlayerData.java
+Conteúdo:
+package com.bernardo.dbi.alinhamento;
+
+public class PlayerData {
+
+    private String name;
+    private int good;
+    private int neutral;
+    private int evil;
+
+    public PlayerData(String name, int good, int neutral, int evil) {
+        int total = good + neutral + evil;
+        if (total > 100) {
+            throw new IllegalArgumentException(
+                "A soma de good, neutral e evil nao pode exceder 100"
+            );
+        }
+        this.name    = name;
+        this.good    = good;
+        this.neutral = neutral;
+        this.evil    = evil;
+    }
+
+    public String getAlinhamento() {
+        int total = good + neutral + evil;
+        if (total == 0) return "indefinido";
+
+        float goodPct = (float) good / total;
+
+        if (goodPct >= 0.75f) {
+            return "bom";
+        } else if (goodPct >= 0.45f) {
+            return "neutro";
+        } else {
+            return "mal";
+        }
+    }
+
+    public String getName()    { return name; }
+    public int    getGood()    { return good; }
+    public int    getNeutral() { return neutral; }
+    public int    getEvil()    { return evil; }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/client/render/RenderUtils.java
+Conteúdo:
+package com.bernardo.dbi.client.render;
+
+import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.Identifier;
+
+/**
+ * Utilitários para melhorar a renderização de texturas de customização
+ */
+public class RenderUtils {
+
+    public enum FeatureType {
+        HAIR, NOSE, EYES, MOUTH, RACE_BODY
+    }
+
+    /**
+     * Renderiza uma textura com melhor controle de transparência e blending
+     */
+    public static void renderCustomTexture(MatrixStack matrices, VertexConsumer vertexConsumer,
+                                         int light, int overlay, float alpha, Runnable renderFunction) {
+        matrices.push();
+        renderFunction.run();
+        matrices.pop();
+    }
+
+    /**
+     * Cria um RenderLayer otimizado para texturas de customização
+     */
+    public static RenderLayer getCustomTextureLayer(Identifier texture) {
+        return RenderLayer.getEntityTranslucent(texture);
+    }
+
+    /**
+     * Ajusta a posição Z para layering correto das texturas faciais
+     */
+    public static float getFaceLayerOffset(FeatureType featureType) {
+        return switch (featureType) {
+            case HAIR -> 0.0f;
+            case NOSE -> 0.02f;
+            case EYES -> 0.01f;
+            case MOUTH -> 0.025f;
+            case RACE_BODY -> 0.0f;
+        };
+    }
+
+    /**
+     * Ajusta a posição Y para melhor alinhamento facial
+     */
+    public static float getFaceVerticalOffset(FeatureType featureType) {
+        return switch (featureType) {
+            case HAIR -> -0.25f;
+            case NOSE -> -0.0625f;
+            case EYES -> -0.125f;
+            case MOUTH -> 0.0f;
+            case RACE_BODY -> 0.0f;
+        };
+    }
+
+    /**
+     * Retorna o alpha ideal para cada tipo de feature
+     */
+    public static float getFeatureAlpha(FeatureType featureType) {
+        return switch (featureType) {
+            case HAIR -> 0.9f;
+            case NOSE -> 0.9f;
+            case EYES -> 0.95f;
+            case MOUTH -> 0.85f;
+            case RACE_BODY -> 0.95f;
+        };
+    }
+
+    /**
+     * Valor de pulso para animação (breathe/pulsar) com base em tempo.
+     */
+    public static float getPulse(float tick) {
+        return 1.0f + 0.04f * (float) Math.sin(tick * 0.08f);
+    }
+
+    /**
+     * Pequeno desvio oscilante para cabelo
+     */
+    public static float getHairSway(float tick) {
+        return 0.0f + 0.015f * (float) Math.sin(tick * 0.12f);
+    }
+
+    /**
+     * Escala de brilho para olhos, dá efeito “vivo”
+     */
+    public static float getEyeGlow(float tick) {
+        return 0.8f + 0.2f * (float) (0.5f + 0.5f * Math.sin(tick * 0.15f));
+    }
+
+    /**
+     * Normaliza uma cor para [0,1] pelo inteiro RGB
+     */
+    public static float[] rgb(int color) {
+        float r = ((color >> 16) & 0xFF) / 255f;
+        float g = ((color >> 8) & 0xFF) / 255f;
+        float b = (color & 0xFF) / 255f;
+        return new float[] { r, g, b };
+    }
+}
+----------------------------------------
 Arquivo: src/main/java/com/bernardo/dbi/client/render/DBIPlayerModel.java
 Conteúdo:
 package com.bernardo.dbi.client.render;
@@ -224,6 +453,8 @@ package com.bernardo.dbi.client.render;
 import net.minecraft.client.model.*;
 import net.minecraft.client.render.entity.model.EntityModelPartNames;
 import net.minecraft.client.render.entity.model.BipedEntityModel;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.entity.LivingEntity;
 
 public class DBIPlayerModel<T extends LivingEntity> extends BipedEntityModel<T> {
@@ -233,25 +464,46 @@ public class DBIPlayerModel<T extends LivingEntity> extends BipedEntityModel<T> 
     public static final int TEX_W = 64;
     public static final int TEX_H = 64;
 
+    public final ModelPart leftEar;
+    public final ModelPart rightEar;
+
     public DBIPlayerModel(ModelPart root) {
         super(root);
+        this.leftEar = root.getChild("left_ear");
+        this.rightEar = root.getChild("right_ear");
     }
 
     public static TexturedModelData getTexturedModelData() {
         ModelData modelData = new ModelData();
         ModelPartData root = modelData.getRoot();
 
-        // HEAD — tamanho e UV padrão
+        // HEAD — tamanho e UV padrão com melhor mapeamento para customizações
         ModelPartData head = root.addChild(EntityModelPartNames.HEAD,
             ModelPartBuilder.create()
-                .uv(0, 0).cuboid(-4, -8, -4, 8, 8, 8, new Dilation(0f)),
+                // Face principal (olhos, nariz, boca)
+                .uv(0, 0).cuboid(-4, -8, -4, 8, 8, 8, new Dilation(0f))
+                // Adicionar partes específicas para melhor mapeamento de texturas
+                .uv(32, 0).cuboid(-4, -8, -4, 8, 8, 0, new Dilation(0.01f)), // Face overlay
             ModelTransform.pivot(0, 0, 0));
 
-        // HAT — com overlay
+        // HAT — com overlay para cabelos e acessórios
         root.addChild(EntityModelPartNames.HAT,
             ModelPartBuilder.create()
-                .uv(32, 0).cuboid(-4, -8, -4, 8, 8, 8, new Dilation(0.5f)),
+                .uv(32, 0).cuboid(-4, -8, -4, 8, 8, 8, new Dilation(0.5f))
+                // Overlay adicional para cabelos
+                .uv(0, 32).cuboid(-4, -8, -4, 8, 8, 0, new Dilation(0.51f)),
             ModelTransform.pivot(0, 0, 0));
+
+        // Adicionar orelhas para Namekians (invisíveis por padrão, ativadas por raça)
+        root.addChild("left_ear",
+            ModelPartBuilder.create()
+                .uv(56, 0).cuboid(0, -10, -1, 2, 4, 1, new Dilation(0f)),
+            ModelTransform.pivot(4, -2, 0));
+
+        root.addChild("right_ear",
+            ModelPartBuilder.create()
+                .uv(56, 0).mirrored().cuboid(-2, -10, -1, 2, 4, 1, new Dilation(0f)),
+            ModelTransform.pivot(-4, -2, 0));
 
         // BODY — torso
         root.addChild(EntityModelPartNames.BODY,
@@ -285,269 +537,47 @@ public class DBIPlayerModel<T extends LivingEntity> extends BipedEntityModel<T> 
 
         return TexturedModelData.of(modelData, TEX_W, TEX_H);
     }
-}
 
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/client/render/layer/MouthLayer.java
-Conteúdo:
-package com.bernardo.dbi.client.render.layer;
-
-import com.bernardo.dbi.client.render.DBIPlayerModel;
-import com.bernardo.dbi.player.DBIPlayerData;
-import net.minecraft.client.network.AbstractClientPlayerEntity;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.entity.feature.FeatureRenderer;
-import net.minecraft.client.render.entity.feature.FeatureRendererContext;
-import net.minecraft.client.render.entity.model.PlayerEntityModel;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.Identifier;
-
-public class MouthLayer extends FeatureRenderer<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> {
-
-    private final DBIPlayerModel<AbstractClientPlayerEntity> mouthModel;
-
-    public MouthLayer(FeatureRendererContext<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> ctx) {
-        super(ctx);
-        this.mouthModel = new DBIPlayerModel<>(
-            DBIPlayerModel.getTexturedModelData().createModel()
-        );
+    /**
+     * Renderiza apenas a cabeça com melhor controle para texturas de customização
+     */
+    public void renderHeadOnly(MatrixStack matrices, VertexConsumer vertices, int light, int overlay,
+                              float red, float green, float blue, float alpha) {
+        this.head.render(matrices, vertices, light, overlay, red, green, blue, alpha);
     }
 
-    @Override
-    public void render(MatrixStack matrices, VertexConsumerProvider vertexConsumers,
-                       int light, AbstractClientPlayerEntity player,
-                       float limbAngle, float limbDistance,
-                       float tickDelta, float animationProgress,
-                       float headYaw, float headPitch) {
-
-        Identifier texture = DBIPlayerData.getMouthTexture(player);
-        if (texture == null) return;
-
-        // Sincroniza o modelo com as animações do player
-        mouthModel.setAngles(player, limbAngle, limbDistance, animationProgress, headYaw, headPitch);
-        mouthModel.handSwingProgress = getContextModel().handSwingProgress;
-        mouthModel.riding = getContextModel().riding;
-        mouthModel.child = getContextModel().child;
-
-        var vertexConsumer = vertexConsumers.getBuffer(RenderLayer.getEntityCutoutNoCull(texture));
-        mouthModel.head.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1f, 1f, 1f, 1f);
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/client/render/layer/HairLayer.java
-Conteúdo:
-package com.bernardo.dbi.client.render.layer;
-
-import com.bernardo.dbi.client.render.DBIPlayerModel;
-import com.bernardo.dbi.player.DBIPlayerData;
-import net.minecraft.client.network.AbstractClientPlayerEntity;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.entity.feature.FeatureRenderer;
-import net.minecraft.client.render.entity.feature.FeatureRendererContext;
-import net.minecraft.client.render.entity.model.PlayerEntityModel;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.Identifier;
-
-public class HairLayer extends FeatureRenderer<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> {
-
-    private final DBIPlayerModel<AbstractClientPlayerEntity> hairModel;
-
-    public HairLayer(FeatureRendererContext<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> ctx) {
-        super(ctx);
-        this.hairModel = new DBIPlayerModel<>(
-            DBIPlayerModel.getTexturedModelData().createModel()
-        );
+    /**
+     * Renderiza o corpo completo com texturas de raça
+     */
+    public void renderBodyOnly(MatrixStack matrices, VertexConsumer vertices, int light, int overlay,
+                              float red, float green, float blue, float alpha) {
+        this.body.render(matrices, vertices, light, overlay, red, green, blue, alpha);
+        this.rightArm.render(matrices, vertices, light, overlay, red, green, blue, alpha);
+        this.leftArm.render(matrices, vertices, light, overlay, red, green, blue, alpha);
+        this.rightLeg.render(matrices, vertices, light, overlay, red, green, blue, alpha);
+        this.leftLeg.render(matrices, vertices, light, overlay, red, green, blue, alpha);
     }
 
-    @Override
-    public void render(MatrixStack matrices, VertexConsumerProvider vertexConsumers,
-                       int light, AbstractClientPlayerEntity player,
-                       float limbAngle, float limbDistance,
-                       float tickDelta, float animationProgress,
-                       float headYaw, float headPitch) {
-
-        Identifier texture = DBIPlayerData.getHairTexture(player);
-        if (texture == null) return;
-
-        // Não renderiza o hair_base como cabelo externo; ele é parte de base interna.
-        if (texture.getPath().endsWith("hair_base.png")) return;
-
-        // Sincroniza o modelo com as animações do player
-        hairModel.setAngles(player, limbAngle, limbDistance, animationProgress, headYaw, headPitch);
-        hairModel.handSwingProgress = getContextModel().handSwingProgress;
-        hairModel.riding = getContextModel().riding;
-        hairModel.child = getContextModel().child;
-
-        // RenderLayer.getEntityCutoutNoCull para transparência sem distorção
-        var vertexConsumer = vertexConsumers.getBuffer(RenderLayer.getEntityCutoutNoCull(texture));
-        
-        // Renderiza só o cabelo (head) - evita sobreposição de hat em cima
-        hairModel.head.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1f, 1f, 1f, 1f);
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/client/render/layer/EyeLayer.java
-Conteúdo:
-package com.bernardo.dbi.client.render.layer;
-
-import com.bernardo.dbi.client.render.DBIPlayerModel;
-import com.bernardo.dbi.player.DBIPlayerData;
-import net.minecraft.client.network.AbstractClientPlayerEntity;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.entity.feature.FeatureRenderer;
-import net.minecraft.client.render.entity.feature.FeatureRendererContext;
-import net.minecraft.client.render.entity.model.PlayerEntityModel;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.Identifier;
-
-public class EyeLayer extends FeatureRenderer<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> {
-
-    // Olhos são 128x128
-    private final DBIPlayerModel<AbstractClientPlayerEntity> eyeModel;
-
-    public EyeLayer(FeatureRendererContext<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> ctx) {
-        super(ctx);
-        this.eyeModel = new DBIPlayerModel<>(
-            DBIPlayerModel.getTexturedModelData().createModel()
-        );
+    /**
+     * Renderiza orelhas para raças que as possuem (ex: Namekians)
+     */
+    public void renderEars(MatrixStack matrices, VertexConsumer vertices, int light, int overlay,
+                          float red, float green, float blue, float alpha) {
+        this.leftEar.render(matrices, vertices, light, overlay, red, green, blue, alpha);
+        this.rightEar.render(matrices, vertices, light, overlay, red, green, blue, alpha);
     }
 
-    @Override
-    public void render(MatrixStack matrices, VertexConsumerProvider vertexConsumers,
-                       int light, AbstractClientPlayerEntity player,
-                       float limbAngle, float limbDistance,
-                       float tickDelta, float animationProgress,
-                       float headYaw, float headPitch) {
-
-        Identifier texture = DBIPlayerData.getEyeTexture(player);
-        if (texture == null) return;
-
-        // Sincroniza o modelo com as animações do player
-        eyeModel.setAngles(player, limbAngle, limbDistance, animationProgress, headYaw, headPitch);
-        eyeModel.handSwingProgress = getContextModel().handSwingProgress;
-        eyeModel.riding = getContextModel().riding;
-        eyeModel.child = getContextModel().child;
-
-        var vertexConsumer = vertexConsumers.getBuffer(RenderLayer.getEntityCutoutNoCull(texture));
-        eyeModel.head.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1f, 1f, 1f, 1f);
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/client/render/layer/RaceBodyLayer.java
-Conteúdo:
-package com.bernardo.dbi.client.render.layer;
-
-import com.bernardo.dbi.client.render.DBIPlayerModel;
-import com.bernardo.dbi.player.DBIPlayerData;
-import com.bernardo.dbi.player.Race;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.AbstractClientPlayerEntity;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.entity.feature.FeatureRenderer;
-import net.minecraft.client.render.entity.feature.FeatureRendererContext;
-import net.minecraft.client.render.entity.model.PlayerEntityModel;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.Identifier;
-
-public class RaceBodyLayer extends FeatureRenderer<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> {
-
-    private final DBIPlayerModel<AbstractClientPlayerEntity> raceModel;
-
-    private static final Identifier RACE_SAIYAN      = new Identifier("dragonblockinfinity", "textures/races/base.png");
-    private static final Identifier RACE_HALF_SAIYAN = new Identifier("dragonblockinfinity", "textures/races/base.png");
-    private static final Identifier RACE_NAMEKIAN    = new Identifier("dragonblockinfinity", "textures/races/namekian.png");
-    private static final Identifier RACE_ARCOSIAN    = new Identifier("dragonblockinfinity", "textures/races/arconsian.png");
-
-    public RaceBodyLayer(FeatureRendererContext<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> ctx) {
-        super(ctx);
-        this.raceModel = new DBIPlayerModel<>(
-            DBIPlayerModel.getTexturedModelData().createModel()
-        );
-    }
-
-    @Override
-    public void render(MatrixStack matrices, VertexConsumerProvider vertexConsumers,
-                       int light, AbstractClientPlayerEntity player,
-                       float limbAngle, float limbDistance,
-                       float tickDelta, float animationProgress,
-                       float headYaw, float headPitch) {
-
-        Race race = DBIPlayerData.getRace(player);
-
-        Identifier texture = switch (race) {
-            case NAMEKIAN    -> RACE_NAMEKIAN;
-            case ARCOSIAN    -> RACE_ARCOSIAN;
-            default          -> RACE_SAIYAN;
-        };
-
-        // Sincroniza pose do modelo de raça com o modelo do player
-        raceModel.setAngles(player, limbAngle, limbDistance, animationProgress, headYaw, headPitch);
-        raceModel.handSwingProgress = getContextModel().handSwingProgress;
-        raceModel.riding             = getContextModel().riding;
-        raceModel.child              = getContextModel().child;
-
-        var vertexConsumer = vertexConsumers.getBuffer(RenderLayer.getEntityCutoutNoCull(texture));
-        raceModel.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1f, 1f, 1f, 1f);
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/client/render/layer/NoseLayer.java
-Conteúdo:
-package com.bernardo.dbi.client.render.layer;
-
-import com.bernardo.dbi.client.render.DBIPlayerModel;
-import com.bernardo.dbi.player.DBIPlayerData;
-import net.minecraft.client.network.AbstractClientPlayerEntity;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.entity.feature.FeatureRenderer;
-import net.minecraft.client.render.entity.feature.FeatureRendererContext;
-import net.minecraft.client.render.entity.model.PlayerEntityModel;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.Identifier;
-
-public class NoseLayer extends FeatureRenderer<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> {
-
-    private final DBIPlayerModel<AbstractClientPlayerEntity> noseModel;
-
-    public NoseLayer(FeatureRendererContext<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> ctx) {
-        super(ctx);
-        this.noseModel = new DBIPlayerModel<>(
-            DBIPlayerModel.getTexturedModelData().createModel()
-        );
-    }
-
-    @Override
-    public void render(MatrixStack matrices, VertexConsumerProvider vertexConsumers,
-                       int light, AbstractClientPlayerEntity player,
-                       float limbAngle, float limbDistance,
-                       float tickDelta, float animationProgress,
-                       float headYaw, float headPitch) {
-
-        Identifier texture = DBIPlayerData.getNoseTexture(player);
-        if (texture == null) return;
-
-        // Sincroniza o modelo com as animações do player
-        noseModel.setAngles(player, limbAngle, limbDistance, animationProgress, headYaw, headPitch);
-        noseModel.handSwingProgress = getContextModel().handSwingProgress;
-        noseModel.riding = getContextModel().riding;
-        noseModel.child = getContextModel().child;
-
-        var vertexConsumer = vertexConsumers.getBuffer(RenderLayer.getEntityCutoutNoCull(texture));
-        noseModel.head.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1f, 1f, 1f, 1f);
+    /**
+     * Renderiza a cabeça com escala DBI
+     */
+    public void renderHeadWithScale(MatrixStack matrices, VertexConsumer vertices, int light, int overlay,
+                                   float red, float green, float blue, float alpha, float scale) {
+        matrices.push();
+        if (scale != 1.0f) {
+            matrices.scale(scale, scale, scale);
+        }
+        renderHeadOnly(matrices, vertices, light, overlay, red, green, blue, alpha);
+        matrices.pop();
     }
 }
 
@@ -580,9 +610,13 @@ Arquivo: src/main/java/com/bernardo/dbi/client/ClientSetup.java
 Conteúdo:
 package com.bernardo.dbi.client;
 
+
+import com.bernardo.dbi.registry.DBIEntities;
 import com.bernardo.dbi.screen.CaracterScreen;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.MinecraftClient;
 
 public class ClientSetup implements ClientModInitializer {
@@ -591,6 +625,12 @@ public class ClientSetup implements ClientModInitializer {
     public void onInitializeClient() {
         KeyBindings.initialize();
 
+        // ── Registra os layers dos modelos de entidade ────────────────────────
+        
+
+        // ── Registra renderers de entidade ──────────────────────────────
+
+        // ── Tecla para abrir o menu ────────────────────────────────────────────
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (KeyBindings.OPEN_MENU.wasPressed()) {
                 if (client.player != null) {
@@ -600,467 +640,302 @@ public class ClientSetup implements ClientModInitializer {
         });
     }
 }
-
 ----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/entity/VelociraptorModel.java
+Arquivo: src/main/java/com/bernardo/dbi/client/model/Dinossauro1Model.java
 Conteúdo:
 package com.bernardo.dbi.client.model;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.model.EntityModel;
-import net.minecraft.client.model.geom.ModelLayerLocation;
-import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.model.geom.PartPose;
-import net.minecraft.client.model.geom.builders.*;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.client.model.*;
+import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.entity.model.EntityModel;
+import net.minecraft.client.render.entity.model.EntityModelLayer;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.Entity;
+import net.minecraft.util.Identifier;
 
-public class VelociraptorModel<T extends Entity> extends EntityModel<T> {
+public class Dinossauro1Model<T extends Entity> extends EntityModel<T> {
 
-    public static final ModelLayerLocation LAYER_LOCATION =
-            new ModelLayerLocation(new ResourceLocation("dbi", "velociraptor"), "main");
+    public static final EntityModelLayer LAYER = new EntityModelLayer(
+            new Identifier("dragonblockinfinity", "dinossauro1"), "main");
 
     private final ModelPart Root;
-    private final ModelPart body;
-    private final ModelPart head;
-    private final ModelPart bone19;
-    private final ModelPart bone21;
-    private final ModelPart bone22;
-    private final ModelPart bone20;
-    private final ModelPart rightArm;
-    private final ModelPart bone15;
-    private final ModelPart bone16;
-    private final ModelPart bone17;
-    private final ModelPart bone18;
-    private final ModelPart leftArm;
-    private final ModelPart bone14;
-    private final ModelPart bone11;
-    private final ModelPart bone12;
-    private final ModelPart bone13;
-    private final ModelPart rightLeg;
-    private final ModelPart bone6;
-    private final ModelPart bone7;
-    private final ModelPart bone8;
-    private final ModelPart bone9;
-    private final ModelPart bone10;
-    private final ModelPart leftLeg;
-    private final ModelPart bone5;
-    private final ModelPart bone;
-    private final ModelPart bone2;
-    private final ModelPart bone3;
-    private final ModelPart bone4;
-    private final ModelPart rightItem;
+    private final ModelPart Corpo;
+    private final ModelPart Corpo2;
+    private final ModelPart Head;
+    private final ModelPart Eye;
+    private final ModelPart Eye2;
+    private final ModelPart LegRigth;
+    private final ModelPart Base;
+    private final ModelPart Canela;
+    private final ModelPart Joelho;
+    private final ModelPart Coxa;
+    private final ModelPart finger3;
+    private final ModelPart Claw;
+    private final ModelPart LegLeft;
+    private final ModelPart Base2;
+    private final ModelPart Canela2;
+    private final ModelPart Joelho2;
+    private final ModelPart Coxa2;
+    private final ModelPart finger4;
+    private final ModelPart Claw2;
+    private final ModelPart ArmRight;
+    private final ModelPart Arm1;
+    private final ModelPart forearm;
+    private final ModelPart finger;
+    private final ModelPart ArmLeft;
+    private final ModelPart Arm2;
+    private final ModelPart forearm2;
+    private final ModelPart finger2;
+    private final ModelPart Tail;
+    private final ModelPart tail1;
+    private final ModelPart tail2;
+    private final ModelPart tail3;
+    private final ModelPart tail4;
 
-    public VelociraptorModel(ModelPart root) {
+    public Dinossauro1Model(ModelPart root) {
         this.Root      = root.getChild("Root");
-        this.body      = this.Root.getChild("body");
-        this.head      = this.Root.getChild("head");
-        this.bone19    = this.head.getChild("bone19");
-        this.bone21    = this.bone19.getChild("bone21");
-        this.bone22    = this.bone19.getChild("bone22");
-        this.bone20    = this.head.getChild("bone20");
-        this.rightArm  = this.Root.getChild("rightArm");
-        this.bone15    = this.rightArm.getChild("bone15");
-        this.bone16    = this.bone15.getChild("bone16");
-        this.bone17    = this.bone15.getChild("bone17");
-        this.bone18    = this.bone15.getChild("bone18");
-        this.leftArm   = this.Root.getChild("leftArm");
-        this.bone14    = this.leftArm.getChild("bone14");
-        this.bone11    = this.bone14.getChild("bone11");
-        this.bone12    = this.bone14.getChild("bone12");
-        this.bone13    = this.bone14.getChild("bone13");
-        this.rightLeg  = this.Root.getChild("rightLeg");
-        this.bone6     = this.rightLeg.getChild("bone6");
-        this.bone7     = this.bone6.getChild("bone7");
-        this.bone8     = this.bone6.getChild("bone8");
-        this.bone9     = this.bone6.getChild("bone9");
-        this.bone10    = this.bone6.getChild("bone10");
-        this.leftLeg   = this.Root.getChild("leftLeg");
-        this.bone5     = this.leftLeg.getChild("bone5");
-        this.bone      = this.bone5.getChild("bone");
-        this.bone2     = this.bone5.getChild("bone2");
-        this.bone3     = this.bone5.getChild("bone3");
-        this.bone4     = this.bone5.getChild("bone4");
-        this.rightItem = this.Root.getChild("rightItem");
+        this.Corpo     = this.Root.getChild("Corpo");
+        this.Corpo2    = this.Corpo.getChild("Corpo2");
+        this.Head      = this.Root.getChild("Head");
+        this.Eye       = this.Head.getChild("Eye");
+        this.Eye2      = this.Head.getChild("Eye2");
+        this.LegRigth  = this.Root.getChild("LegRigth");
+        this.Base      = this.LegRigth.getChild("Base");
+        this.Canela    = this.LegRigth.getChild("Canela");
+        this.Joelho    = this.LegRigth.getChild("Joelho");
+        this.Coxa      = this.LegRigth.getChild("Coxa");
+        this.finger3   = this.LegRigth.getChild("finger3");
+        this.Claw      = this.finger3.getChild("Claw");
+        this.LegLeft   = this.Root.getChild("LegLeft");
+        this.Base2     = this.LegLeft.getChild("Base2");
+        this.Canela2   = this.LegLeft.getChild("Canela2");
+        this.Joelho2   = this.LegLeft.getChild("Joelho2");
+        this.Coxa2     = this.LegLeft.getChild("Coxa2");
+        this.finger4   = this.LegLeft.getChild("finger4");
+        this.Claw2     = this.finger4.getChild("Claw2");
+        this.ArmRight  = this.Root.getChild("ArmRight");
+        this.Arm1      = this.ArmRight.getChild("Arm1");
+        this.forearm   = this.ArmRight.getChild("forearm");
+        this.finger    = this.ArmRight.getChild("finger");
+        this.ArmLeft   = this.Root.getChild("ArmLeft");
+        this.Arm2      = this.ArmLeft.getChild("Arm2");
+        this.forearm2  = this.ArmLeft.getChild("forearm2");
+        this.finger2   = this.ArmLeft.getChild("finger2");
+        this.Tail      = this.Root.getChild("Tail");
+        this.tail1     = this.Tail.getChild("tail1");
+        this.tail2     = this.Tail.getChild("tail2");
+        this.tail3     = this.Tail.getChild("tail3");
+        this.tail4     = this.Tail.getChild("tail4");
     }
 
-    public static LayerDefinition createBodyLayer() {
-        MeshDefinition meshdefinition = new MeshDefinition();
-        PartDefinition partdefinition = meshdefinition.getRoot();
+    public static TexturedModelData getTexturedModelData() {
+        ModelData modelData = new ModelData();
+        ModelPartData partData = modelData.getRoot();
 
-        PartDefinition Root = partdefinition.addOrReplaceChild("Root",
-                CubeListBuilder.create(), PartPose.offset(0.0F, 24.0F, 0.0F));
+        ModelPartData Root = partData.addChild("Root",
+                ModelPartBuilder.create(), ModelTransform.pivot(-3.0F, 0.5F, -16.8333F));
 
-        PartDefinition body = Root.addOrReplaceChild("body", CubeListBuilder.create()
-                .texOffs(0, 33).addBox(-8.0F, -9.0F, 1.0F, 16.0F, 16.0F, 15.0F, new CubeDeformation(0.0F))
-                .texOffs(48, 105).addBox(-7.0F, -8.0F, 16.0F, 14.0F, 14.0F, 6.0F, new CubeDeformation(0.0F))
-                .texOffs(0, 64).addBox(-6.0F, -7.0F, 22.0F, 12.0F, 12.0F, 12.0F, new CubeDeformation(0.0F))
-                .texOffs(62, 33).addBox(-5.0F, -6.0F, 34.0F, 10.0F, 10.0F, 15.0F, new CubeDeformation(0.0F))
-                .texOffs(66, 0).addBox(-4.0F, -5.0F, 49.0F, 8.0F, 8.0F, 16.0F, new CubeDeformation(0.0F))
-                .texOffs(62, 58).addBox(-3.0F, -4.0F, 65.0F, 6.0F, 6.0F, 19.0F, new CubeDeformation(0.0F))
-                .texOffs(96, 83).addBox(-2.0F, -3.0F, 84.0F, 4.0F, 4.0F, 18.0F, new CubeDeformation(0.0F))
-                .texOffs(0, 0).addBox(-7.0F, -8.0F, -18.0F, 14.0F, 14.0F, 19.0F, new CubeDeformation(0.0F)),
-                PartPose.offset(0.0F, -24.0F, 0.0F));
+        ModelPartData Corpo = Root.addChild("Corpo", ModelPartBuilder.create()
+                .uv(0, 0).cuboid(-11.0F, -8.0F, -9.0F, 22.0F, 19.0F, 17.0F, new Dilation(0.0F))
+                .uv(0, 72).cuboid(-10.0F, -7.0F, 8.0F, 20.0F, 17.0F, 17.0F, new Dilation(0.0F)),
+                ModelTransform.pivot(3.0F, -6.5F, 18.8333F));
 
-        body.addOrReplaceChild("body_r1", CubeListBuilder.create()
-                .texOffs(114, 0).addBox(-4.0F, -5.0F, -9.0F, 8.0F, 10.0F, 6.0F, new CubeDeformation(0.0F))
-                .texOffs(112, 24).addBox(-5.0F, -6.0F, -3.0F, 10.0F, 12.0F, 8.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(0.0F, -2.0F, -21.0F, -0.2094F, 0.0F, 0.0F));
+        ModelPartData Corpo2 = Corpo.addChild("Corpo2", ModelPartBuilder.create()
+                .uv(75, 37).cuboid(-8.0F, -4.157F, -16.7409F, 15.0F, 13.0F, 21.0F, new Dilation(0.0F)),
+                ModelTransform.of(0.0F, -3.0F, -16.0F, -0.6981F, 0.0F, 0.0F));
 
-        PartDefinition head = Root.addOrReplaceChild("head",
-                CubeListBuilder.create(), PartPose.offset(0.0F, -24.0F, 0.0F));
+        Corpo2.addChild("Corpo2_r1", ModelPartBuilder.create()
+                .uv(0, 107).cuboid(-8.0F, -7.5F, -3.5F, 15.0F, 12.0F, 14.0F, new Dilation(0.0F)),
+                ModelTransform.of(0.0F, 6.4819F, -24.0425F, 0.3491F, 0.0F, 0.0F));
 
-        PartDefinition bone19 = head.addOrReplaceChild("bone19", CubeListBuilder.create()
-                .texOffs(48, 83).addBox(-4.0F, -6.0F, -16.0F, 8.0F, 6.0F, 16.0F, new CubeDeformation(0.0F))
-                .texOffs(82, 136).addBox(2.0F, -5.0F, -16.0F, 2.0F, 2.0F, 2.0F, new CubeDeformation(0.0F))
-                .texOffs(90, 136).addBox(-4.0F, -5.0F, -16.0F, 2.0F, 2.0F, 2.0F, new CubeDeformation(0.0F))
-                .texOffs(104, 31).addBox(-1.0F, 0.0F, -15.0F, 2.0F, 2.0F, 0.0F, new CubeDeformation(0.0F))
-                .texOffs(30, 133).addBox(3.0F, 0.0F, -7.0F, 0.0F, 2.0F, 2.0F, new CubeDeformation(0.0F))
-                .texOffs(104, 24).addBox(3.0F, -1.0F, -5.0F, 0.0F, 3.0F, 4.0F, new CubeDeformation(0.0F))
-                .texOffs(50, 135).addBox(-3.0F, -1.0F, -5.0F, 0.0F, 3.0F, 4.0F, new CubeDeformation(0.0F))
-                .texOffs(30, 137).addBox(-3.0F, 0.0F, -7.0F, 0.0F, 2.0F, 2.0F, new CubeDeformation(0.0F))
-                .texOffs(134, 138).addBox(3.0F, 0.0F, -10.0F, 0.0F, 2.0F, 2.0F, new CubeDeformation(0.0F))
-                .texOffs(134, 138).addBox(3.0F, 0.0F, -7.0F, 0.0F, 2.0F, 2.0F, new CubeDeformation(0.0F))
-                .texOffs(138, 138).addBox(-3.0F, 0.0F, -10.0F, 0.0F, 2.0F, 2.0F, new CubeDeformation(0.0F))
-                .texOffs(0, 139).addBox(3.0F, 0.0F, -13.0F, 0.0F, 2.0F, 2.0F, new CubeDeformation(0.0F))
-                .texOffs(4, 139).addBox(-3.0F, 0.0F, -13.0F, 0.0F, 2.0F, 2.0F, new CubeDeformation(0.0F)),
-                PartPose.offset(0.0F, -3.0F, -29.0F));
+        Corpo2.addChild("Corpo2_r2", ModelPartBuilder.create()
+                .uv(0, 37).cuboid(-10.0F, -2.0F, -2.0F, 19.0F, 16.0F, 18.0F, new Dilation(0.0F)),
+                ModelTransform.of(0.0F, -3.4691F, -3.14F, 0.3491F, 0.0F, 0.0F));
 
-        bone19.addOrReplaceChild("bone19_r1", CubeListBuilder.create()
-                .texOffs(12, 139).addBox(0.0F, -1.0F, -1.0F, 0.0F, 2.0F, 2.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(-2.0F, 1.0F, -14.0F, 0.0F, -0.9076F, 0.0F));
-        bone19.addOrReplaceChild("bone19_r2", CubeListBuilder.create()
-                .texOffs(8, 139).addBox(0.0F, -1.0F, -1.0F, 0.0F, 2.0F, 2.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(2.0F, 1.0F, -14.0F, 0.0F, 0.9076F, 0.0F));
+        ModelPartData Head = Root.addChild("Head", ModelPartBuilder.create()
+                .uv(119, 169).cuboid(-6.4818F, -5.4366F, 9.6761F, 13.0F, 11.0F, 7.0F, new Dilation(0.7F))
+                .uv(140, 121).cuboid(-6.4818F, -4.4366F, 1.6761F, 13.0F, 1.0F, 7.0F, new Dilation(0.7F))
+                .uv(140, 103).cuboid(-6.4818F, -2.4366F, -6.3239F, 13.0F, 2.0F, 15.0F, new Dilation(0.7F))
+                .uv(116, 133).cuboid(-6.4818F, 0.5634F, -6.3239F, 13.0F, 3.0F, 15.0F, new Dilation(0.7F))
+                .uv(0, 134).cuboid(-6.9818F, 4.4634F, -5.8239F, 14.0F, 1.0F, 15.0F, new Dilation(0.2F)),
+                ModelTransform.pivot(2.4818F, -22.0634F, -37.8427F));
 
-        PartDefinition bone21 = bone19.addOrReplaceChild("bone21",
-                CubeListBuilder.create(), PartPose.offset(5.0F, -5.0F, -6.0F));
-        bone21.addOrReplaceChild("bone21_r1", CubeListBuilder.create()
-                .texOffs(34, 108).addBox(-1.0F, -1.0F, -2.0F, 2.0F, 2.0F, 4.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(-1.0F, 0.0F, 0.0F, 0.2618F, 0.2094F, 0.0F));
-        bone21.addOrReplaceChild("bone21_r2", CubeListBuilder.create()
-                .texOffs(98, 130).addBox(-1.0F, -0.5F, -1.5F, 2.0F, 1.0F, 4.0F, new CubeDeformation(0.4F)),
-                PartPose.offsetAndRotation(-1.0F, 2.0F, 0.0F, 0.2618F, 0.2094F, 0.0F));
+        Head.addChild("head11_r1", ModelPartBuilder.create().uv(82, 165).cuboid(-7.0F, -0.5F, -0.5F, 14.0F, 1.0F, 2.0F, new Dilation(0.2F)), ModelTransform.of(0.0182F, -1.8707F, -7.1915F, -2.0071F, 0.0F, 0.0F));
+        Head.addChild("head10_r1", ModelPartBuilder.create().uv(82, 161).cuboid(-7.0F, -0.5F, -0.5F, 14.0F, 1.0F, 2.0F, new Dilation(0.2F)), ModelTransform.of(0.0182F, 0.1326F, -7.9081F, -1.6581F, 0.0F, 0.0F));
+        Head.addChild("head9_r1",  ModelPartBuilder.create().uv(148, 67).cuboid(-7.0F, -0.5F, -0.5F, 14.0F, 1.0F, 2.0F, new Dilation(0.2F)), ModelTransform.of(0.0182F, 2.0628F, -7.8094F, -1.0908F, 0.0F, 0.0F));
+        Head.addChild("head8_r1",  ModelPartBuilder.create().uv(142, 96).cuboid(-7.0F, -0.5F, -0.5F, 14.0F, 1.0F, 2.0F, new Dilation(0.2F)), ModelTransform.of(0.0182F, 3.9371F, -6.6564F, -0.829F, 0.0F, 0.0F));
+        Head.addChild("head6_r1",  ModelPartBuilder.create().uv(112, 30).cuboid(-7.5F, -1.0F, -1.5F, 13.0F, 1.0F, 3.0F, new Dilation(0.6F)), ModelTransform.of(0.9182F, -4.12F, 7.2721F, 0.2182F, 0.0F, 0.0F));
+        Head.addChild("head5_r1",  ModelPartBuilder.create().uv(79, 30).cuboid(-7.5F, -1.0F, -1.5F, 13.0F, 1.0F, 3.0F, new Dilation(0.6F)), ModelTransform.of(0.9182F, -2.701F, -0.0426F, 0.5236F, 0.0F, 0.0F));
 
-        PartDefinition bone22 = bone19.addOrReplaceChild("bone22",
-                CubeListBuilder.create(), PartPose.offset(-5.0F, -5.0F, -6.0F));
-        bone22.addOrReplaceChild("bone22_r1", CubeListBuilder.create()
-                .texOffs(34, 114).addBox(-1.0F, -1.0F, -2.0F, 2.0F, 2.0F, 4.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(1.0F, 0.0F, 0.0F, 0.2618F, -0.2094F, 0.0F));
-        bone22.addOrReplaceChild("bone22_r2", CubeListBuilder.create()
-                .texOffs(106, 130).addBox(-1.0F, -0.5F, -1.5F, 2.0F, 1.0F, 4.0F, new CubeDeformation(0.4F)),
-                PartPose.offsetAndRotation(1.0F, 2.0F, 0.0F, 0.2618F, -0.2094F, 0.0F));
+        ModelPartData Eye = Head.addChild("Eye", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+        Eye.addChild("eye2_r1", ModelPartBuilder.create().uv(181, 121).cuboid(-3.0F, -4.0F, -1.0F, 4.0F, 4.0F, 4.0F, new Dilation(0.0F)), ModelTransform.of(7.0F, -1.0F, 9.0F, 0.3927F, 0.0F, 0.0F));
+        Eye.addChild("eye_r1",  ModelPartBuilder.create().uv(179, 173).cuboid(-3.0F, -2.0F, -2.0F, 4.0F, 2.0F, 5.0F, new Dilation(0.2F)), ModelTransform.of(8.0F, -0.4F, 9.9946F, 0.3927F, 0.0F, 0.0F));
+        Eye.addChild("eye1_r1", ModelPartBuilder.create().uv(179, 165).cuboid(-3.0F, -2.0F, -1.4163F, 4.0F, 2.0F, 5.0F, new Dilation(0.2F)), ModelTransform.of(7.0F, -4.6824F, 7.3923F, 0.3927F, 0.0F, 0.0F));
 
-        head.addOrReplaceChild("bone20", CubeListBuilder.create()
-                .texOffs(48, 105).addBox(-4.0F, 0.0F, -16.0F, 8.0F, 4.0F, 16.0F, new CubeDeformation(0.0F)),
-                PartPose.offset(0.0F, -3.0F, -29.0F));
+        ModelPartData Eye2 = Head.addChild("Eye2", ModelPartBuilder.create(), ModelTransform.pivot(-14.0F, 0.0F, -1.0F));
+        Eye2.addChild("eye3_r1", ModelPartBuilder.create().uv(181, 121).cuboid(-3.0F, -4.0F, -1.0F, 4.0F, 4.0F, 4.0F, new Dilation(0.0F)), ModelTransform.of(9.0F, -1.0F, 9.0F, 0.3927F, 0.0F, 0.0F));
+        Eye2.addChild("eye_r2",  ModelPartBuilder.create().uv(179, 173).cuboid(-3.0F, -2.0F, -1.0F, 4.0F, 2.0F, 5.0F, new Dilation(0.2F)), ModelTransform.of(8.0F, -0.4F, 8.9946F, 0.3927F, 0.0F, 0.0F));
+        Eye2.addChild("eye2_r2", ModelPartBuilder.create().uv(179, 165).cuboid(-3.0F, -2.0F, -2.4163F, 4.0F, 2.0F, 5.0F, new Dilation(0.2F)), ModelTransform.of(9.0F, -4.6824F, 8.3923F, 0.3927F, 0.0F, 0.0F));
 
-        // ── RIGHT ARM ────────────────────────────────────────────────────────
-        PartDefinition rightArm = Root.addOrReplaceChild("rightArm",
-                CubeListBuilder.create(), PartPose.offset(-6.0F, -20.0F, 0.0F));
-        PartDefinition bone15 = rightArm.addOrReplaceChild("bone15",
-                CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
-        PartDefinition bone16 = bone15.addOrReplaceChild("bone16",
-                CubeListBuilder.create(), PartPose.offset(-2.0F, 0.0F, -10.0F));
-        bone16.addOrReplaceChild("bone16_r1", CubeListBuilder.create()
-                .texOffs(48, 108).addBox(-2.0F, -2.0F, -2.0F, 4.0F, 6.0F, 4.0F, new CubeDeformation(0.0F))
-                .texOffs(114, 16).addBox(-2.0F, -6.0F, -2.0F, 4.0F, 4.0F, 4.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.6109F, 0.0F, 0.0F));
-        PartDefinition bone17 = bone15.addOrReplaceChild("bone17",
-                CubeListBuilder.create(), PartPose.offset(-2.0F, 4.0F, -8.0F));
-        bone17.addOrReplaceChild("bone17_r1", CubeListBuilder.create()
-                .texOffs(48, 64).addBox(-2.0F, -2.0F, -2.0F, 4.0F, 6.0F, 2.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, -1.0472F, 0.0F, 0.0F));
-        PartDefinition bone18 = bone15.addOrReplaceChild("bone18",
-                CubeListBuilder.create(), PartPose.offsetAndRotation(-2.0F, 9.0F, -12.0F, -0.3142F, 0.0F, 0.0F));
-        bone18.addOrReplaceChild("bone18_r1", CubeListBuilder.create()
-                .texOffs(140, 92).addBox(-0.5F, -2.0F, -1.0F, 1.0F, 3.0F, 1.0F, new CubeDeformation(0.0F))
-                .texOffs(90, 140).addBox(-2.0F, -2.0F, -1.0F, 1.0F, 3.0F, 1.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(0.0F, 0.0F, 1.0F, -1.0472F, 0.0F, 0.0F));
-        bone18.addOrReplaceChild("bone18_r2", CubeListBuilder.create()
-                .texOffs(138, 115).addBox(-1.0F, -3.0F, -1.0F, 1.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(2.0F, 0.0F, 1.0F, -1.7104F, 0.0F, 0.0F));
-        bone18.addOrReplaceChild("bone18_r3", CubeListBuilder.create()
-                .texOffs(130, 16).addBox(-2.0F, -1.0F, -2.0F, 4.0F, 2.0F, 4.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(0.0F, -2.0F, -1.0F, -1.0472F, 0.0F, 0.0F));
+        // ── LEG RIGHT ────────────────────────────────────────────────────────
+        ModelPartData LegRigth = Root.addChild("LegRigth", ModelPartBuilder.create(), ModelTransform.pivot(18.0F, 21.0F, 17.3333F));
+        LegRigth.addChild("Base", ModelPartBuilder.create().uv(148, 50).cuboid(-5.0F, -0.5F, 0.0F, 13.0F, 3.0F, 13.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
 
-        // ── LEFT ARM ─────────────────────────────────────────────────────────
-        PartDefinition leftArm = Root.addOrReplaceChild("leftArm",
-                CubeListBuilder.create(), PartPose.offset(6.0F, -20.0F, 0.0F));
-        PartDefinition bone14 = leftArm.addOrReplaceChild("bone14",
-                CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
-        PartDefinition bone11 = bone14.addOrReplaceChild("bone11",
-                CubeListBuilder.create(), PartPose.offset(2.0F, 0.0F, -10.0F));
-        bone11.addOrReplaceChild("bone11_r1", CubeListBuilder.create()
-                .texOffs(66, 125).addBox(-2.0F, -2.0F, -2.0F, 4.0F, 6.0F, 4.0F, new CubeDeformation(0.0F))
-                .texOffs(114, 16).addBox(-2.0F, -6.0F, -2.0F, 4.0F, 4.0F, 4.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.6109F, 0.0F, 0.0F));
-        PartDefinition bone12 = bone14.addOrReplaceChild("bone12",
-                CubeListBuilder.create(), PartPose.offset(2.0F, 4.0F, -8.0F));
-        bone12.addOrReplaceChild("bone12_r1", CubeListBuilder.create()
-                .texOffs(48, 72).addBox(-2.0F, -2.0F, -2.0F, 4.0F, 6.0F, 2.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, -1.0472F, 0.0F, 0.0F));
-        PartDefinition bone13 = bone14.addOrReplaceChild("bone13",
-                CubeListBuilder.create(), PartPose.offsetAndRotation(2.0F, 9.0F, -12.0F, -0.3142F, 0.0F, 0.0F));
-        bone13.addOrReplaceChild("bone13_r1", CubeListBuilder.create()
-                .texOffs(140, 96).addBox(-1.5F, -2.0F, -1.0F, 1.0F, 3.0F, 1.0F, new CubeDeformation(0.0F))
-                .texOffs(94, 140).addBox(0.0F, -2.0F, -1.0F, 1.0F, 3.0F, 1.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(1.0F, 0.0F, 1.0F, -1.0472F, 0.0F, 0.0F));
-        bone13.addOrReplaceChild("bone13_r2", CubeListBuilder.create()
-                .texOffs(138, 121).addBox(0.0F, -3.0F, -1.0F, 1.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(-2.0F, 0.0F, 1.0F, -1.7104F, 0.0F, 0.0F));
-        bone13.addOrReplaceChild("bone13_r3", CubeListBuilder.create()
-                .texOffs(82, 130).addBox(-2.0F, -1.0F, -2.0F, 4.0F, 2.0F, 4.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(0.0F, -2.0F, -1.0F, -1.0472F, 0.0F, 0.0F));
+        ModelPartData Canela = LegRigth.addChild("Canela", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+        Canela.addChild("canela1_r1", ModelPartBuilder.create().uv(45, 161).cuboid(-2.0F, -12.0F, -6.0F, 9.0F, 14.0F, 9.0F, new Dilation(0.0F)), ModelTransform.of(-1.0F, -0.5F, 8.0F, -0.3054F, 0.0F, 0.0F));
 
-        // ── RIGHT LEG ────────────────────────────────────────────────────────
-        PartDefinition rightLeg = Root.addOrReplaceChild("rightLeg",
-                CubeListBuilder.create(), PartPose.offset(-10.0F, -23.0F, 8.0F));
-        PartDefinition bone6 = rightLeg.addOrReplaceChild("bone6",
-                CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
-        PartDefinition bone7 = bone6.addOrReplaceChild("bone7", CubeListBuilder.create()
-                .texOffs(66, 24).addBox(-3.0F, -1.0F, 1.0F, 5.0F, 3.0F, 6.0F, new CubeDeformation(0.0F)),
-                PartPose.offset(0.0F, 21.0F, -3.0F));
-        bone7.addOrReplaceChild("bone7_r1", CubeListBuilder.create()
-                .texOffs(82, 125).addBox(-1.0F, -1.5F, -1.0F, 2.0F, 3.0F, 1.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(3.0F, 0.0F, -1.0F, -0.4538F, -0.4538F, -0.2618F));
-        bone7.addOrReplaceChild("bone7_r2", CubeListBuilder.create()
-                .texOffs(0, 133).addBox(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 3.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(3.0F, 0.0F, 0.0F, -0.4538F, -0.4538F, -0.2618F));
-        bone7.addOrReplaceChild("bone7_r3", CubeListBuilder.create()
-                .texOffs(66, 135).addBox(-1.0F, -2.0F, -1.0F, 1.0F, 3.0F, 3.0F, new CubeDeformation(0.1F))
-                .texOffs(58, 135).addBox(-3.0F, -2.0F, -1.0F, 1.0F, 3.0F, 3.0F, new CubeDeformation(0.1F)),
-                PartPose.offsetAndRotation(1.0F, 1.0F, 0.0F, 0.4887F, 0.0F, 0.0F));
-        bone7.addOrReplaceChild("bone7_r4", CubeListBuilder.create()
-                .texOffs(106, 135).addBox(0.0F, -1.0F, -2.0F, 1.0F, 2.0F, 3.0F, new CubeDeformation(0.2F)),
-                PartPose.offsetAndRotation(-4.0F, 0.0F, 1.0F, 0.5236F, 0.384F, 0.2094F));
-        PartDefinition bone8 = bone6.addOrReplaceChild("bone8",
-                CubeListBuilder.create(), PartPose.offset(1.0F, 17.0F, 3.0F));
-        bone8.addOrReplaceChild("bone8_r1", CubeListBuilder.create()
-                .texOffs(48, 80).addBox(-0.5F, -0.5F, -1.0F, 1.0F, 1.0F, 2.0F, new CubeDeformation(0.2F)),
-                PartPose.offsetAndRotation(3.0F, 2.0F, -1.0F, 2.9147F, 1.2915F, -2.2166F));
-        bone8.addOrReplaceChild("bone8_r2", CubeListBuilder.create()
-                .texOffs(10, 133).addBox(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 3.0F, new CubeDeformation(0.3F)),
-                PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, -2.9671F, 1.2915F, -2.2166F));
-        bone8.addOrReplaceChild("bone8_r3", CubeListBuilder.create()
-                .texOffs(122, 115).addBox(-1.0F, -6.0F, -2.0F, 3.0F, 12.0F, 5.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(-2.0F, -2.0F, 0.0F, -0.3491F, 0.0F, 0.0F));
-        PartDefinition bone9 = bone6.addOrReplaceChild("bone9",
-                CubeListBuilder.create(), PartPose.offset(-1.0F, 8.0F, -2.0F));
-        bone9.addOrReplaceChild("bone9_r1", CubeListBuilder.create()
-                .texOffs(112, 44).addBox(-2.0F, -3.0F, -6.0F, 5.0F, 6.0F, 12.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(0.0F, 0.0F, 3.0F, -0.3491F, 0.0F, 0.0F));
-        PartDefinition bone10 = bone6.addOrReplaceChild("bone10",
-                CubeListBuilder.create(), PartPose.offset(-1.0F, 2.0F, -1.0F));
-        bone10.addOrReplaceChild("bone10_r1", CubeListBuilder.create()
-                .texOffs(88, 105).addBox(-3.0F, -8.0F, -5.0F, 7.0F, 15.0F, 10.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, -0.3491F, 0.0F, 0.0F));
+        ModelPartData Joelho = LegRigth.addChild("Joelho", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+        Joelho.addChild("joelho_r1", ModelPartBuilder.create().uv(142, 72).cuboid(-3.0F, -5.0F, -6.0F, 11.0F, 9.0F, 14.0F, new Dilation(0.0F)), ModelTransform.of(-1.0F, -13.263F, 6.0427F, -0.3054F, 0.0F, 0.0F));
 
-        // ── LEFT LEG ─────────────────────────────────────────────────────────
-        PartDefinition leftLeg = Root.addOrReplaceChild("leftLeg",
-                CubeListBuilder.create(), PartPose.offset(2.0F, -12.0F, 0.0F));
-        PartDefinition bone5 = leftLeg.addOrReplaceChild("bone5",
-                CubeListBuilder.create(), PartPose.offset(8.0F, -11.0F, 8.0F));
-        PartDefinition bone = bone5.addOrReplaceChild("bone", CubeListBuilder.create()
-                .texOffs(122, 105).addBox(-2.0F, -1.0F, 1.0F, 5.0F, 3.0F, 7.0F, new CubeDeformation(0.0F)),
-                PartPose.offset(0.0F, 21.0F, -3.0F));
-        bone.addOrReplaceChild("bone_r1", CubeListBuilder.create()
-                .texOffs(138, 127).addBox(-2.0F, -2.0F, -1.0F, 2.0F, 3.0F, 1.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(-3.0F, 0.0F, -2.0F, -0.4538F, 0.4538F, 0.2618F));
-        bone.addOrReplaceChild("bone_r2", CubeListBuilder.create()
-                .texOffs(20, 133).addBox(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 3.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(-3.0F, 0.0F, 0.0F, -0.4538F, 0.4538F, 0.2618F));
-        bone.addOrReplaceChild("bone_r3", CubeListBuilder.create()
-                .texOffs(98, 135).addBox(0.0F, -2.0F, -1.0F, 1.0F, 3.0F, 3.0F, new CubeDeformation(0.1F))
-                .texOffs(74, 135).addBox(2.0F, -2.0F, -1.0F, 1.0F, 3.0F, 3.0F, new CubeDeformation(0.1F)),
-                PartPose.offsetAndRotation(-1.0F, 1.0F, 0.0F, 0.4887F, 0.0F, 0.0F));
-        bone.addOrReplaceChild("bone_r4", CubeListBuilder.create()
-                .texOffs(114, 135).addBox(-1.0F, -1.0F, -2.0F, 1.0F, 2.0F, 3.0F, new CubeDeformation(0.2F)),
-                PartPose.offsetAndRotation(4.0F, 0.0F, 1.0F, 0.5236F, -0.384F, -0.2094F));
-        PartDefinition bone2 = bone5.addOrReplaceChild("bone2",
-                CubeListBuilder.create(), PartPose.offset(-1.0F, 17.0F, 3.0F));
-        bone2.addOrReplaceChild("bone2_r1", CubeListBuilder.create()
-                .texOffs(54, 80).addBox(-0.5F, -0.5F, -1.0F, 1.0F, 1.0F, 2.0F, new CubeDeformation(0.2F)),
-                PartPose.offsetAndRotation(-3.0F, 2.0F, -1.0F, 2.9147F, -1.2915F, 2.2166F));
-        bone2.addOrReplaceChild("bone2_r2", CubeListBuilder.create()
-                .texOffs(134, 132).addBox(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 3.0F, new CubeDeformation(0.3F)),
-                PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, -2.9671F, -1.2915F, 2.2166F));
-        bone2.addOrReplaceChild("bone2_r3", CubeListBuilder.create()
-                .texOffs(34, 125).addBox(-2.0F, -6.0F, -2.0F, 3.0F, 12.0F, 5.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(2.0F, -2.0F, 0.0F, -0.3491F, 0.0F, 0.0F));
-        PartDefinition bone3 = bone5.addOrReplaceChild("bone3",
-                CubeListBuilder.create(), PartPose.offset(1.0F, 8.0F, -2.0F));
-        bone3.addOrReplaceChild("bone3_r1", CubeListBuilder.create()
-                .texOffs(112, 62).addBox(-3.0F, -3.0F, -6.0F, 5.0F, 6.0F, 12.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(0.0F, 0.0F, 3.0F, -0.3491F, 0.0F, 0.0F));
-        PartDefinition bone4 = bone5.addOrReplaceChild("bone4",
-                CubeListBuilder.create(), PartPose.offset(1.0F, 2.0F, -1.0F));
-        bone4.addOrReplaceChild("bone4_r1", CubeListBuilder.create()
-                .texOffs(0, 108).addBox(-4.0F, -8.0F, -5.0F, 7.0F, 15.0F, 10.0F, new CubeDeformation(0.0F)),
-                PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, -0.3491F, 0.0F, 0.0F));
+        ModelPartData Coxa = LegRigth.addChild("Coxa", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+        Coxa.addChild("cube_r1", ModelPartBuilder.create().uv(148, 24).cuboid(-5.0F, -14.0F, -5.0F, 13.0F, 16.0F, 9.0F, new Dilation(0.0F)), ModelTransform.of(0.0F, -15.0F, -2.0F, -0.5236F, 0.0F, 0.0F));
 
-        Root.addOrReplaceChild("rightItem",
-                CubeListBuilder.create(), PartPose.offset(-6.0F, -15.0F, 1.0F));
+        ModelPartData finger3 = LegRigth.addChild("finger3", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+        finger3.addChild("finger3_r1", ModelPartBuilder.create().uv(184, 96).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.3F)), ModelTransform.of(7.1794F, 1.3026F, -0.4511F, -0.3054F, -0.3927F, 0.0F));
+        finger3.addChild("finger3_r2", ModelPartBuilder.create().uv(175, 96).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.3F)), ModelTransform.of(3.1794F, 1.3026F, -0.4511F, -0.3054F, 0.0F, 0.0F));
+        finger3.addChild("finger3_r3", ModelPartBuilder.create().uv(45, 151).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.3F)), ModelTransform.of(-0.8206F, 1.3026F, -0.4511F, -0.3054F, 0.0F, 0.0F));
+        finger3.addChild("finger3_r4", ModelPartBuilder.create().uv(59, 127).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.3F)), ModelTransform.of(-4.8206F, 1.3026F, -0.4511F, -0.3054F, 0.3927F, 0.0F));
 
-        return LayerDefinition.create(meshdefinition, 256, 256);
+        ModelPartData Claw = finger3.addChild("Claw", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+        Claw.addChild("claw2_r1", ModelPartBuilder.create().uv(0, 186).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.25F)), ModelTransform.of(-5.2786F, 0.2862F, -1.7374F, 1.8762F, 0.3927F, 0.0F));
+        Claw.addChild("claw3_r1", ModelPartBuilder.create().uv(18, 186).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.25F)), ModelTransform.of(7.6374F, 0.2862F, -1.7374F, 1.8762F, -0.3927F, 0.0F));
+        Claw.addChild("claw2_r2", ModelPartBuilder.create().uv(9, 186).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.25F)), ModelTransform.of(3.1294F, 0.2862F, -1.8156F, 1.8762F, 0.0F, 0.0F));
+        Claw.addChild("claw1_r1", ModelPartBuilder.create().uv(68, 185).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.25F)), ModelTransform.of(-0.8706F, 0.2862F, -1.8156F, 1.8762F, 0.0F, 0.0F));
+
+        // ── LEG LEFT ─────────────────────────────────────────────────────────
+        ModelPartData LegLeft = Root.addChild("LegLeft", ModelPartBuilder.create(), ModelTransform.pivot(-14.0F, 21.0F, 17.3333F));
+        LegLeft.addChild("Base2", ModelPartBuilder.create().uv(116, 152).cuboid(-5.0F, -0.5F, 0.0F, 13.0F, 3.0F, 13.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+
+        ModelPartData Canela2 = LegLeft.addChild("Canela2", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+        Canela2.addChild("canela2_r1", ModelPartBuilder.create().uv(82, 169).cuboid(-2.0F, -12.0F, -6.0F, 9.0F, 14.0F, 9.0F, new Dilation(0.0F)), ModelTransform.of(-1.0F, -0.5F, 8.0F, -0.3054F, 0.0F, 0.0F));
+
+        ModelPartData Joelho2 = LegLeft.addChild("Joelho2", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+        Joelho2.addChild("joelho_r2", ModelPartBuilder.create().uv(144, 0).cuboid(-3.0F, -2.0F, -6.0F, 11.0F, 9.0F, 14.0F, new Dilation(0.0F)), ModelTransform.of(-1.0F, -16.263F, 7.0427F, -0.3054F, 0.0F, 0.0F));
+
+        ModelPartData Coxa2 = LegLeft.addChild("Coxa2", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+        Coxa2.addChild("cube_r2", ModelPartBuilder.create().uv(0, 151).cuboid(-5.0F, -14.0F, -5.0F, 13.0F, 16.0F, 9.0F, new Dilation(0.0F)), ModelTransform.of(0.0F, -15.0F, -2.0F, -0.5236F, 0.0F, 0.0F));
+
+        ModelPartData finger4 = LegLeft.addChild("finger4", ModelPartBuilder.create(), ModelTransform.pivot(1.0F, 0.0F, 0.0F));
+        finger4.addChild("finger4_r1", ModelPartBuilder.create().uv(137, 188).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.3F)), ModelTransform.of(7.1794F, 1.3026F, -0.4511F, -0.3054F, -0.3927F, 0.0F));
+        finger4.addChild("finger4_r2", ModelPartBuilder.create().uv(128, 188).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.3F)), ModelTransform.of(3.1794F, 1.3026F, -0.4511F, -0.3054F, 0.0F, 0.0F));
+        finger4.addChild("finger4_r3", ModelPartBuilder.create().uv(119, 188).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.3F)), ModelTransform.of(-0.8206F, 1.3026F, -0.4511F, -0.3054F, 0.0F, 0.0F));
+        finger4.addChild("finger4_r4", ModelPartBuilder.create().uv(27, 186).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.3F)), ModelTransform.of(-4.8206F, 1.3026F, -0.4511F, -0.3054F, 0.3927F, 0.0F));
+
+        ModelPartData Claw2 = finger4.addChild("Claw2", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+        Claw2.addChild("claw3_r2", ModelPartBuilder.create().uv(68, 191).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.25F)), ModelTransform.of(-5.2786F, 0.2862F, -1.7374F, 1.8762F, 0.3927F, 0.0F));
+        Claw2.addChild("claw4_r1", ModelPartBuilder.create().uv(188, 154).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.25F)), ModelTransform.of(7.6374F, 0.2862F, -1.7374F, 1.8762F, -0.3927F, 0.0F));
+        Claw2.addChild("claw3_r3", ModelPartBuilder.create().uv(188, 148).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.25F)), ModelTransform.of(3.1294F, 0.2862F, -1.8156F, 1.8762F, 0.0F, 0.0F));
+        Claw2.addChild("claw2_r3", ModelPartBuilder.create().uv(146, 188).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.25F)), ModelTransform.of(-0.8706F, 0.2862F, -1.8156F, 1.8762F, 0.0F, 0.0F));
+
+        // ── ARM RIGHT ────────────────────────────────────────────────────────
+        ModelPartData ArmRight = Root.addChild("ArmRight", ModelPartBuilder.create(), ModelTransform.pivot(10.0F, -5.0F, -8.6667F));
+        ModelPartData Arm1 = ArmRight.addChild("Arm1", ModelPartBuilder.create(), ModelTransform.pivot(8.0F, 0.0F, 0.0F));
+        Arm1.addChild("Arm1_r1", ModelPartBuilder.create().uv(169, 152).cuboid(-3.0F, -2.0F, -1.0F, 5.0F, 8.0F, 4.0F, new Dilation(0.0F)), ModelTransform.of(-4.0F, 3.2958F, 10.6568F, -0.3927F, 0.0F, 0.0F));
+
+        ModelPartData forearm = ArmRight.addChild("forearm", ModelPartBuilder.create(), ModelTransform.pivot(-4.0F, 0.0F, 0.0F));
+        forearm.addChild("ForeArm_r1", ModelPartBuilder.create().uv(173, 139).cuboid(-2.0F, -2.0F, -2.0F, 5.0F, 4.0F, 4.0F, new Dilation(0.0F)), ModelTransform.of(7.0F, 11.3496F, 11.8594F, 1.0472F, 0.0F, 0.0F));
+        forearm.addChild("ForeArm_r2", ModelPartBuilder.create().uv(173, 130).cuboid(-2.0F, -2.0F, -2.0F, 5.0F, 4.0F, 4.0F, new Dilation(0.0F)), ModelTransform.of(7.0F, 9.4238F, 10.0947F, 0.4363F, 0.0F, 0.0F));
+
+        ModelPartData finger = ArmRight.addChild("finger", ModelPartBuilder.create(), ModelTransform.pivot(-4.0F, 0.0F, 0.0F));
+        finger.addChild("finger3_r5", ModelPartBuilder.create()
+                .uv(179, 181).cuboid(0.0F, -2.0F, -3.0F, 1.0F, 3.0F, 6.0F, new Dilation(0.0F))
+                .uv(59, 117).cuboid(2.0F, -2.0F, -3.0F, 1.0F, 3.0F, 6.0F, new Dilation(0.0F))
+                .uv(59, 107).cuboid(4.0F, -2.0F, -3.0F, 1.0F, 3.0F, 6.0F, new Dilation(0.0F)),
+                ModelTransform.of(5.0F, 12.3392F, 15.2304F, 0.2618F, 0.0F, 0.0F));
+
+        // ── ARM LEFT ─────────────────────────────────────────────────────────
+        ModelPartData ArmLeft = Root.addChild("ArmLeft", ModelPartBuilder.create(), ModelTransform.pivot(-12.0F, 3.0F, 4.3333F));
+        ModelPartData Arm2 = ArmLeft.addChild("Arm2", ModelPartBuilder.create(), ModelTransform.pivot(8.0F, -8.0F, -13.0F));
+        Arm2.addChild("Arm2_r1", ModelPartBuilder.create().uv(160, 169).cuboid(-2.5F, -4.0F, -2.0F, 5.0F, 8.0F, 4.0F, new Dilation(0.0F)), ModelTransform.of(-4.5F, 5.5262F, 10.8153F, -0.3927F, 0.0F, 0.0F));
+
+        ModelPartData forearm2 = ArmLeft.addChild("forearm2", ModelPartBuilder.create(), ModelTransform.pivot(-4.0F, -8.0F, -13.0F));
+        forearm2.addChild("ForeArm_r3", ModelPartBuilder.create().uv(19, 177).cuboid(-2.0F, -2.0F, -2.0F, 5.0F, 4.0F, 4.0F, new Dilation(0.0F)), ModelTransform.of(7.0F, 11.3496F, 11.8594F, 1.0472F, 0.0F, 0.0F));
+        forearm2.addChild("ForeArm_r4", ModelPartBuilder.create().uv(0, 177).cuboid(-2.0F, -2.0F, -2.0F, 5.0F, 4.0F, 4.0F, new Dilation(0.0F)), ModelTransform.of(7.0F, 9.4238F, 10.0947F, 0.4363F, 0.0F, 0.0F));
+
+        ModelPartData finger2 = ArmLeft.addChild("finger2", ModelPartBuilder.create(), ModelTransform.pivot(-4.0F, -8.0F, -13.0F));
+        finger2.addChild("finger4_r5", ModelPartBuilder.create()
+                .uv(53, 185).cuboid(0.0F, -2.0F, -3.0F, 1.0F, 3.0F, 6.0F, new Dilation(0.0F))
+                .uv(38, 185).cuboid(2.0F, -2.0F, -3.0F, 1.0F, 3.0F, 6.0F, new Dilation(0.0F))
+                .uv(160, 182).cuboid(4.0F, -2.0F, -3.0F, 1.0F, 3.0F, 6.0F, new Dilation(0.0F)),
+                ModelTransform.of(5.0F, 12.3392F, 15.2304F, 0.2618F, 0.0F, 0.0F));
+
+        // ── TAIL ─────────────────────────────────────────────────────────────
+        ModelPartData Tail = Root.addChild("Tail", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, -5.0F, 50.0F));
+        Tail.addChild("tail1", ModelPartBuilder.create().uv(75, 72).cuboid(-6.0F, -7.0F, -7.0F, 18.0F, 15.0F, 15.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, -0.5F, 0.8333F));
+        Tail.addChild("tail2", ModelPartBuilder.create().uv(79, 0).cuboid(-5.0F, -6.0F, -7.0F, 16.0F, 13.0F, 16.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, -0.5F, 15.8333F));
+        Tail.addChild("tail3", ModelPartBuilder.create().uv(75, 103).cuboid(-4.0F, -5.0F, -7.0F, 14.0F, 11.0F, 18.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, -0.5F, 31.8333F));
+        Tail.addChild("tail4", ModelPartBuilder.create().uv(59, 133).cuboid(-2.0F, -4.0F, -7.0F, 10.0F, 9.0F, 18.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, -0.5F, 49.8333F));
+
+        return TexturedModelData.of(modelData, 256, 256);
     }
 
     @Override
-    public void setupAnim(T entity, float limbSwing, float limbSwingAmount,
-                          float ageInTicks, float netHeadYaw, float headPitch) {
-    }
+    public void setAngles(T entity, float limbAngle, float limbDistance,
+                          float animationProgress, float headYaw, float headPitch) {}
 
     @Override
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer,
-                               int packedLight, int packedOverlay,
-                               float red, float green, float blue, float alpha) {
-        Root.render(poseStack, vertexConsumer, packedLight, packedOverlay,
-                    red, green, blue, alpha);
+    public void render(MatrixStack matrices, VertexConsumer vertices,
+                       int light, int overlay,
+                       float red, float green, float blue, float alpha) {
+        Root.render(matrices, vertices, light, overlay, red, green, blue, alpha);
     }
 }
 
 ----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/entity/VelociraptorAnimation.java
+Arquivo: src/main/java/com/bernardo/dbi/client/model/Dino4Model.java
 Conteúdo:
-package com.bernardo.dbi.client.animation;
 
-import net.minecraft.client.animation.AnimationChannel;
-import net.minecraft.client.animation.AnimationDefinition;
-import net.minecraft.client.animation.Keyframe;
-import net.minecraft.client.animation.KeyframeAnimations;
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/entity/FlyNinbus.java
+Conteúdo:
+package com.bernardo.dbi.entity;
 
-public class VelociraptorAnimation {
+import com.bernardo.dbi.alinhamento.AlinhamentoHelper;
+import com.bernardo.dbi.registry.DBIItems;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
+import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.world.World;
 
-    public static final AnimationDefinition WALK = AnimationDefinition.Builder
-            .withLength(1.0F)
-            .looping()
+public abstract class FlyNinbus extends Entity {
 
-            // body – rotate
-            .addAnimation("body", new AnimationChannel(
-                    AnimationChannel.Targets.ROTATION,
-                    new Keyframe(0.0F,
-                            KeyframeAnimations.degreeVec(0.0F, 0.0F, 0.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.25F,
-                            KeyframeAnimations.degreeVec(0.0F, 0.0F, 5.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.75F,
-                            KeyframeAnimations.degreeVec(0.0F, 0.0F, -5.0F),
-                            AnimationChannel.Interpolations.LINEAR)
-            ))
+    int maxSpeed = 20;
+    int minSpeed = 0;
+    boolean canFly = true;
 
-            // body – translate
-            .addAnimation("body", new AnimationChannel(
-                    AnimationChannel.Targets.POSITION,
-                    new Keyframe(0.0F,
-                            KeyframeAnimations.posVec(0.0F, 0.0F, 0.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.25F,
-                            KeyframeAnimations.posVec(0.0F, 0.0F, -2.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.75F,
-                            KeyframeAnimations.posVec(0.0F, 0.0F, -4.0F),
-                            AnimationChannel.Interpolations.LINEAR)
-            ))
+    public FlyNinbus(EntityType<? extends FlyNinbus> type, World world) {
+        super(type, world);
+    }
 
-            // head – rotate
-            .addAnimation("head", new AnimationChannel(
-                    AnimationChannel.Targets.ROTATION,
-                    new Keyframe(0.0F,
-                            KeyframeAnimations.degreeVec(0.0F, 0.0F, 0.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.25F,
-                            KeyframeAnimations.degreeVec(0.0F, 0.0F, 5.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.75F,
-                            KeyframeAnimations.degreeVec(0.0F, 0.0F, -5.0F),
-                            AnimationChannel.Interpolations.LINEAR)
-            ))
+    public ActionResult interact(PlayerEntity player, Hand hand, EntityHitResult hit) {
+        if (!this.getWorld().isClient) {
+            if (AlinhamentoHelper.isBom(player)) {
+                player.startRiding(this);
+            } else {
+                dropItem(DBIItems.NIMBUS);
+                this.remove(RemovalReason.DISCARDED);
+            }
+        }
+        return ActionResult.SUCCESS;
+    }
 
-            // head – translate
-            .addAnimation("head", new AnimationChannel(
-                    AnimationChannel.Targets.POSITION,
-                    new Keyframe(0.0F,
-                            KeyframeAnimations.posVec(0.0F, 0.0F, 0.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.25F,
-                            KeyframeAnimations.posVec(0.0F, 0.0F, -2.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.75F,
-                            KeyframeAnimations.posVec(0.0F, 0.0F, -4.0F),
-                            AnimationChannel.Interpolations.LINEAR)
-            ))
+    public void setMaxSpeed(int maxSpeed) {
+        if (maxSpeed > 20) {
+            maxSpeed = 20;
+        }
+        this.maxSpeed = maxSpeed;
+    }
 
-            // rightLeg – rotate
-            .addAnimation("rightLeg", new AnimationChannel(
-                    AnimationChannel.Targets.ROTATION,
-                    new Keyframe(0.0F,
-                            KeyframeAnimations.degreeVec(0.0F, 0.0F, 0.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.25F,
-                            KeyframeAnimations.degreeVec(-12.5F, 0.0F, 0.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.5F,
-                            KeyframeAnimations.degreeVec(0.0F, 0.0F, 0.0F),
-                            AnimationChannel.Interpolations.LINEAR)
-            ))
-
-            // rightLeg – translate
-            .addAnimation("rightLeg", new AnimationChannel(
-                    AnimationChannel.Targets.POSITION,
-                    new Keyframe(0.0F,
-                            KeyframeAnimations.posVec(0.0F, 0.0F, 0.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.25F,
-                            KeyframeAnimations.posVec(0.0F, 1.0F, -2.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.5F,
-                            KeyframeAnimations.posVec(0.0F, 0.0F, -7.0F),
-                            AnimationChannel.Interpolations.LINEAR)
-            ))
-
-            // leftLeg – rotate
-            .addAnimation("leftLeg", new AnimationChannel(
-                    AnimationChannel.Targets.ROTATION,
-                    new Keyframe(0.0F,
-                            KeyframeAnimations.degreeVec(0.0F, 0.0F, 0.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.1667F,
-                            KeyframeAnimations.degreeVec(0.0F, 0.0F, 0.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.5F,
-                            KeyframeAnimations.degreeVec(5.0F, 0.0F, 0.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.75F,
-                            KeyframeAnimations.degreeVec(-15.0F, 0.0F, 0.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(1.0F,
-                            KeyframeAnimations.degreeVec(0.0F, 0.0F, 0.0F),
-                            AnimationChannel.Interpolations.LINEAR)
-            ))
-
-            // leftLeg – translate
-            .addAnimation("leftLeg", new AnimationChannel(
-                    AnimationChannel.Targets.POSITION,
-                    new Keyframe(0.0F,
-                            KeyframeAnimations.posVec(0.0F, 0.0F, 0.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.1667F,
-                            KeyframeAnimations.posVec(0.0F, 0.0F, 0.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.5F,
-                            KeyframeAnimations.posVec(0.0F, 0.0F, 1.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(0.75F,
-                            KeyframeAnimations.posVec(0.0F, 3.0F, -7.0F),
-                            AnimationChannel.Interpolations.LINEAR),
-                    new Keyframe(1.0F,
-                            KeyframeAnimations.posVec(0.0F, 0.0F, -7.0F),
-                            AnimationChannel.Interpolations.LINEAR)
-            ))
-
-            .build();
+    public void setMinSpeed(int minSpeed) {
+        if (minSpeed < 0) {
+            minSpeed = 0;
+        }
+        this.minSpeed = minSpeed;
+    }
 }
 
 ----------------------------------------
@@ -1068,15 +943,16 @@ Arquivo: src/main/java/com/bernardo/dbi/screen/CaracterScreen.java
 Conteúdo:
 package com.bernardo.dbi.screen;
 
-import com.bernardo.dbi.player.DBIPlayerData;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-
-import java.util.List;
+import com.bernardo.dbi.screen.widget.BtnArrowRightSmall;
+import com.bernardo.dbi.screen.widget.BtnArrowLeftSmall;
+import com.bernardo.dbi.screen.widget.IconButton;
+import com.bernardo.dbi.screen.widget.BtnCloseXLarge;
 
 public class CaracterScreen extends Screen {
 
@@ -1086,404 +962,191 @@ public class CaracterScreen extends Screen {
     private static final int IMG_W = 510;
     private static final int IMG_H = 318;
 
-    // Cores para melhor visual
-    private static final int COLOR_TITLE = 0xFFD700;        // Ouro
-    private static final int COLOR_LABEL = 0xE8E8E8;        // Branco off
-    private static final int COLOR_VALUE = 0xFFFF00;        // Amarelo brilhante
+    private int btnX, btnY;
 
     private int guiLeft, guiTop, menuW, menuH;
 
-    private static final String[] OPTIONS = {
-        "race", "age", "hair", "hair_color", "eyes", "nose", "mouth"
-    };
-
-    private static final String[] OPTION_LABELS = {
-        "Raça", "Idade", "Cabelo", "Cor do Cabelo", "Olhos", "Nariz", "Boca"
-    };
-
-    private final net.minecraft.client.gui.widget.ButtonWidget[] btnLeft  = new net.minecraft.client.gui.widget.ButtonWidget[OPTIONS.length];
-    private final net.minecraft.client.gui.widget.ButtonWidget[] btnRight = new net.minecraft.client.gui.widget.ButtonWidget[OPTIONS.length];
-
     public CaracterScreen() {
-        super(Text.literal("Criação de Personagem"));
+        super(Text.literal("DragonBlockInfinity Menu"));
     }
 
     @Override
     protected void init() {
         super.init();
 
-        PlayerEntity player = this.client.player;
-        if (player != null) {
-            applyDefaultAppearance(player);
-        }
+        float ratio = Math.min((this.width * 0.75f) / IMG_W, (this.height * 0.75f) / IMG_H);
+        menuW = (int) (IMG_W * ratio);
+        menuH = (int) (IMG_H * ratio);
+        guiLeft = (this.width - menuW) / 2;
+        guiTop = (this.height - menuH) / 2;
 
-        float ratio = Math.min(
-            (this.width  * 0.75f) / IMG_W,
-            (this.height * 0.75f) / IMG_H
-        );
-        menuW   = (int)(IMG_W * ratio);
-        menuH   = (int)(IMG_H * ratio);
-        guiLeft = (this.width  - menuW) / 2;
-        guiTop  = (this.height - menuH) / 2;
+        // Adicionar botão com textura
+        BtnCloseXLarge btnCloseXLarge = new BtnCloseXLarge();
+        int btnX = guiLeft + (int)(menuW * 0.8f); // Posição relativa ao menu
+        int btnY = guiTop + (int)(menuH * 0.9f);
+        
+        btnCloseXLarge.place(btnX, btnY, ratio);
+        btnCloseXLarge.setOnPress(() -> {
+            // Ação do botão, por exemplo, fechar a tela
+            this.close();
+        });
+        this.addDrawableChild(btnCloseXLarge);
+       
 
-        int panelX  = guiLeft + (int)(menuW * 0.55f);
-        int panelW  = (int)(menuW * 0.42f);
-        int startY  = guiTop  + (int)(menuH * 0.12f);
-        int spacing = (int)((menuH * 0.75f) / OPTIONS.length);
-        int btnW    = Math.max(12, (int)(menuH * 0.08f));
-        int btnH    = Math.max(12, (int)(menuH * 0.08f));
-        int lx      = panelX + 4;
-        int rx      = panelX + panelW - btnW - 4;
-
-        for (int i = 0; i < OPTIONS.length; i++) {
-            final int idx = i;
-            int rowY = startY + i * spacing + (spacing - btnH) / 2;
-
-            btnLeft[i] = net.minecraft.client.gui.widget.ButtonWidget.builder(
-                Text.literal("◀"), b -> cycleOption(OPTIONS[idx], -1)
-            ).dimensions(lx, rowY, btnW, btnH).build();
-
-            btnRight[i] = net.minecraft.client.gui.widget.ButtonWidget.builder(
-                Text.literal("▶"), b -> cycleOption(OPTIONS[idx], +1)
-            ).dimensions(rx, rowY, btnW, btnH).build();
-
-            this.addDrawableChild(btnLeft[i]);
-            this.addDrawableChild(btnRight[i]);
-        }
-    }
-
-    private void cycleOption(String option, int dir) {
-        PlayerEntity player = this.client.player;
-        if (player == null) return;
-
-        List<String> opts = AppearanceManager.getOptionsFor(option, DBIPlayerData.getRace(player).name());
-        if (opts.isEmpty()) return;
-
-        int current  = AppearanceManager.getCurrentValue(player, option);
-        int newValue = (current + dir + opts.size()) % opts.size();
-        AppearanceManager.updateAppearance(player, option, newValue);
     }
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         this.renderBackground(context);
 
-        // Fundo menu.png escalado com ratio correto
         context.getMatrices().push();
         context.getMatrices().translate(guiLeft, guiTop, 0);
         context.getMatrices().scale((float) menuW / IMG_W, (float) menuH / IMG_H, 1f);
         context.drawTexture(MENU, 0, 0, 0, 0, IMG_W, IMG_H, TEX_W, TEX_H);
         context.getMatrices().pop();
 
-        // Player model - renderização centralizada e proporcionada
         PlayerEntity player = this.client.player;
         if (player != null) {
-            // Posição do modelo (centro-esquerda)
-            int px    = guiLeft + (int)(menuW * 0.22f);
-            int py    = guiTop  + (int)(menuH * 0.62f);
-            
-            // Escala adaptada à altura da tela
-            int scale = (int)(Math.min(menuW, menuH) * 0.28f);
-            
-            InventoryScreen.drawEntity(
-                context, px, py, scale,
-                (float)(px - mouseX),
-                (float)(py - 10 - mouseY),
-                player
-            );
+            int px = guiLeft + menuW / 4;
+            int py = guiTop + menuH * 4 / 7;
+            int scale = (int) (Math.min(menuW, menuH) * 0.25f);
+            InventoryScreen.drawEntity(context, px, py, scale, (float) (px - mouseX), (float) (py - 10 - mouseY), player);
         }
-
-        // Título
-        context.drawCenteredTextWithShadow(
-            this.textRenderer,
-            Text.literal("✦ Criação de Personagem ✦"),
-            guiLeft + menuW / 2,
-            guiTop + 8,
-            COLOR_TITLE
-        );
-
-        // Painel de opções
-        renderOptionsPanel(context, player);
 
         super.render(context, mouseX, mouseY, delta);
     }
 
-    private void renderOptionsPanel(DrawContext context, PlayerEntity player) {
-        if (player == null) return;
-
-        // Sugestão de configurações automáticas (usadas por padrão)
-        context.drawTextWithShadow(this.textRenderer, Text.literal("Recomendações: use os defaults e ajuste conforme quiser"), guiLeft + 10, guiTop + 30, COLOR_VALUE);
-
-        int panelX  = guiLeft + (int)(menuW * 0.55f);
-        int panelW  = (int)(menuW * 0.42f);
-        int startY  = guiTop  + (int)(menuH * 0.12f);
-        int spacing = (int)((menuH * 0.75f) / OPTIONS.length);
-
-        float ratio = Math.min(
-            (this.width  * 0.75f) / IMG_W,
-            (this.height * 0.75f) / IMG_H
-        );
-        float labelScale = Math.max(0.7f, Math.min(0.85f, ratio * 0.9f));
-        float valueScale = Math.max(0.75f, Math.min(1.0f, ratio * 1.15f));
-
-        String race = DBIPlayerData.getRace(player).name();
-
-        for (int i = 0; i < OPTIONS.length; i++) {
-            int rowY = startY + i * spacing;
-            int labelY = rowY + 4;
-            int valueY = rowY + 18;
-
-            // Rótulo da opção
-            context.getMatrices().push();
-            context.getMatrices().translate(panelX + 8, labelY, 0);
-            context.getMatrices().scale(labelScale, labelScale, 1f);
-            context.drawTextWithShadow(this.textRenderer, OPTION_LABELS[i], 0, 0, COLOR_LABEL);
-            context.getMatrices().pop();
-
-            // Valor atual
-            List<String> opts = AppearanceManager.getDisplayOptionsFor(OPTIONS[i], race);
-            int val = AppearanceManager.getCurrentValue(player, OPTIONS[i]);
-            if (!opts.isEmpty()) val = (val % opts.size() + opts.size()) % opts.size();
-            String display = opts.isEmpty() ? "—" : opts.get(val);
-
-            int centerX = panelX + panelW / 2;
-            context.getMatrices().push();
-            context.getMatrices().translate(centerX, valueY, 0);
-            context.getMatrices().scale(valueScale, valueScale, 1f);
-            context.drawCenteredTextWithShadow(this.textRenderer, Text.literal(display), 0, 0, COLOR_VALUE);
-            context.getMatrices().pop();
-        }
-    }
-
-    private void applyDefaultAppearance(PlayerEntity player) {
-        // Race / Age padrão
-        if (DBIPlayerData.getRace(player) == null) {
-            DBIPlayerData.setRace(player, com.bernardo.dbi.player.Race.SAIYAN);
-        }
-        if (DBIPlayerData.getAge(player) == null) {
-            DBIPlayerData.setAge(player, com.bernardo.dbi.player.AgeStage.ADULT);
-        }
-
-        // Texturas padrão (se ainda não configuradas)
-        if (DBIPlayerData.getHairTexture(player) == null) {
-            DBIPlayerData.setHairTexture(player, new Identifier("dragonblockinfinity", "textures/hairs/hair_goku_overlay.png"));
-        }
-        if (DBIPlayerData.getEyeTexture(player) == null) {
-            DBIPlayerData.setEyeTexture(player, new Identifier("dragonblockinfinity", "textures/eyes/eye1.png"));
-        }
-        if (DBIPlayerData.getNoseTexture(player) == null) {
-            DBIPlayerData.setNoseTexture(player, new Identifier("dragonblockinfinity", "textures/nose/nose1.png"));
-        }
-        if (DBIPlayerData.getMouthTexture(player) == null) {
-            DBIPlayerData.setMouthTexture(player, new Identifier("dragonblockinfinity", "textures/mouth/mouth1.png"));
-        }
-    }
-
     @Override
-    public boolean shouldPause() { return false; }
+    public boolean shouldPause() {
+        return false;
+    }
+
+    
+
+    
 }
 
 ----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/AppearanceManager.java
-Conteúdo:
-package com.bernardo.dbi.screen;
-
-import com.bernardo.dbi.player.AgeStage;
-import com.bernardo.dbi.player.DBIPlayerData;
-import com.bernardo.dbi.player.Race;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.Identifier;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
-public class AppearanceManager {
-
-    // Opções internas (IDs)
-    private static final Map<String, List<String>> GLOBAL_OPTIONS = Map.of(
-        "age",        Arrays.asList("CHILD", "YOUNG", "ADULT", "OLD"),
-        "eyes",       Arrays.asList("eye1", "eye2", "eye_arcosian1"),
-        "nose",       Arrays.asList("nose1", "nose2", "nose3"),
-        "mouth",      Arrays.asList("mouth1", "mouth2", "mouth3"),
-        "hair",       Arrays.asList("hair_goku", "hair_vegeta", "hair_gohan", "hair_trunks"),
-        "hair_color", Arrays.asList("BLACK", "BROWN", "BLONDE", "WHITE", "RED"),
-        "race",       Arrays.asList("SAIYAN", "HALF_SAIYAN", "NAMEKIAN", "ARCOSIAN")
-    );
-
-    // Opções de display (nomes legíveis)
-    private static final Map<String, List<String>> DISPLAY_OPTIONS = Map.of(
-        "age",        Arrays.asList("Criança", "Jovem", "Adulto", "Velho"),
-        "eyes",       Arrays.asList("Olho 1", "Olho 2", "Olho Arcosiano"),
-        "nose",       Arrays.asList("Nariz 1", "Nariz 2", "Nariz 3"),
-        "mouth",      Arrays.asList("Boca 1", "Boca 2", "Boca 3"),
-        "hair",       Arrays.asList("Base", "Goku", "Vegeta", "Gohan", "Trunks"),
-        "hair_color", Arrays.asList("Preto", "Marrom", "Loiro", "Branco", "Vermelho"),
-        "race",       Arrays.asList("Saiyajin", "Meio-Saiyajin", "Namekiano", "Arcosiano")
-    );
-
-    public static List<String> getOptionsFor(String option, String race) {
-        return GLOBAL_OPTIONS.getOrDefault(option, List.of());
-    }
-
-    public static List<String> getDisplayOptionsFor(String option, String race) {
-        return DISPLAY_OPTIONS.getOrDefault(option, List.of());
-    }
-
-    public static int getCurrentValue(PlayerEntity player, String option) {
-        return switch (option) {
-            case "race" -> DBIPlayerData.getRace(player).ordinal();
-            case "age"  -> DBIPlayerData.getAge(player).ordinal();
-            default     -> 0;
-        };
-    }
-
-    public static void updateAppearance(PlayerEntity player, String option, int value) {
-        switch (option) {
-            case "race" -> {
-                Race[] races = Race.values();
-                if (value >= 0 && value < races.length)
-                    DBIPlayerData.setRace(player, races[value]);
-            }
-            case "age" -> {
-                AgeStage[] ages = AgeStage.values();
-                if (value >= 0 && value < ages.length)
-                    DBIPlayerData.setAge(player, ages[value]);
-            }
-            case "hair" -> {
-                List<String> opts = GLOBAL_OPTIONS.get("hair");
-                if (value >= 0 && value < opts.size()) {
-                    String id = opts.get(value);
-                    String fileName = switch (id) {
-                        case "hair_base" -> "hair_base.png";
-                        case "hair_goku" -> "hair_goku_overlay.png";
-                        case "hair_vegeta" -> "hair_vegeta_overlay.png";
-                        case "hair_gohan" -> "hair_gohan_overlay.png";
-                        case "hair_trunks" -> "hair_trunks_overlay.png";
-                        default -> id + ".png";
-                    };
-                    DBIPlayerData.setHairTexture(player,
-                        new Identifier("dragonblockinfinity", "textures/hairs/" + fileName));
-                }
-            }
-            case "eyes" -> {
-                List<String> opts = GLOBAL_OPTIONS.get("eyes");
-                if (value >= 0 && value < opts.size()) {
-                    String id = opts.get(value);
-                    DBIPlayerData.setEyeTexture(player,
-                        new Identifier("dragonblockinfinity", "textures/eyes/" + id + ".png"));
-                }
-            }
-            case "nose" -> {
-                List<String> opts = GLOBAL_OPTIONS.get("nose");
-                if (value >= 0 && value < opts.size()) {
-                    String id = opts.get(value);
-                    DBIPlayerData.setNoseTexture(player,
-                        new Identifier("dragonblockinfinity", "textures/nose/" + id + ".png"));
-                }
-            }
-            case "mouth" -> {
-                List<String> opts = GLOBAL_OPTIONS.get("mouth");
-                if (value >= 0 && value < opts.size()) {
-                    String id = opts.get(value);
-                    DBIPlayerData.setMouthTexture(player,
-                        new Identifier("dragonblockinfinity", "textures/mouth/" + id + ".png"));
-                }
-            }
-            case "hair_color" -> {
-                // Opcional: adiciona suporte simples de cor de cabelo (padrão por enquanto)
-                // Para o visual atual, usa-se o arquivo de overlay, mais a cor é mantida nas texturas.
-            }
-        }
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnCloseXBeige.java
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnDoubleRightSmall.java
 Conteúdo:
 package com.bernardo.dbi.screen.widget;
-public class BtnCloseXBeige extends IconButton {
-    public BtnCloseXBeige() {
-        super(
-            30, 30,
-            60, 60,
-            30, 30,
-            60, 90
-        );
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnConfirmBeige.java
-Conteúdo:
-package com.bernardo.dbi.screen.widget;
-public class BtnConfirmBeige extends IconButton {
-    public BtnConfirmBeige() {
-        super(
-            30, 30,
-            90, 60,
-            30, 30,
-            90, 90
-        );
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/IconJarDark.java
-Conteúdo:
-package com.bernardo.dbi.screen.widget;
-public class IconJarDark extends IconButton {
-    public IconJarDark() {
+public class BtnDoubleRightSmall extends IconButton {
+    public BtnDoubleRightSmall() {
         super(
             10, 10,
-            10, 120,
+            80, 0,
             10, 10,
-            10, 120
+            80, 10
         );
     }
 }
 
 ----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnDoubleLeft.java
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnDeleteLockedSmall.java
 Conteúdo:
 package com.bernardo.dbi.screen.widget;
-public class BtnDoubleLeft extends IconButton {
-    public BtnDoubleLeft() {
+
+public class BtnDeleteLockedSmall extends IconButton {
+    public BtnDeleteLockedSmall() {
         super(
-            30, 30,
+            10, 10,
+            220, 0,
+            10, 10,
+            220, 0
+        );
+        setLocked(true);
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnDeleteSmall.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+
+public class BtnDeleteSmall extends IconButton {
+    public BtnDeleteSmall() {
+        super(
+            10, 10,
+            220, 10,
+            10, 10,
+            220, 20
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnConfirmSmall.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnConfirmSmall extends IconButton {
+    public BtnConfirmSmall() {
+        super(
+            10, 10,
+            150, 0,
+            10, 10,
+            150, 10
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnCloseXLarge.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnCloseXLarge extends IconButton {
+    public BtnCloseXLarge() {
+        super(
+            15, 15,
+            110, 0,
+            15, 15,
+            110, 15
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnPauseSmall.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnPauseSmall extends IconButton {
+    public BtnPauseSmall() {
+        super(
+            10, 10,
+            170, 0,
+            10, 10,
+            170, 10
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnPlusLockedSmall.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+
+public class BtnPlusLockedSmall extends IconButton {
+    public BtnPlusLockedSmall() {
+        super(
+            8, 7,
+            211, 0,
+            8, 7,
+            211, 0
+        );
+        setLocked(true);
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnCloseXSmall.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnCloseXSmall extends IconButton {
+    public BtnCloseXSmall() {
+        super(
+            10, 10,
             140, 0,
-            30, 30,
-            140, 30
-        );
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnStop.java
-Conteúdo:
-package com.bernardo.dbi.screen.widget;
-public class BtnStop extends IconButton {
-    public BtnStop() {
-        super(
-            30, 30,
-            380, 0,
-            30, 30,
-            380, 30
-        );
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnPause.java
-Conteúdo:
-package com.bernardo.dbi.screen.widget;
-public class BtnPause extends IconButton {
-    public BtnPause() {
-        super(
-            30, 30,
-            350, 0,
-            30, 30,
-            350, 30
+            10, 10,
+            140, 10
         );
     }
 }
@@ -1495,10 +1158,10 @@ package com.bernardo.dbi.screen.widget;
 public class ScrollBarTrack extends IconButton {
     public ScrollBarTrack() {
         super(
-            10, 100,
-            500, 0,
-            10, 100,
-            500, 0
+            14, 96,
+            241, 4,
+            14, 96,
+            241, 4
         );
     }
 }
@@ -1510,10 +1173,55 @@ package com.bernardo.dbi.screen.widget;
 public class BtnArrowDownSmall extends IconButton {
     public BtnArrowDownSmall() {
         super(
-            20, 20,
-            120, 0,
-            20, 20,
-            120, 30
+            10, 10,
+            60, 0,
+            10, 10,
+            60, 10
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnPlusSmall.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnPlusSmall extends IconButton {
+    public BtnPlusSmall() {
+        super(
+            10, 10,
+            210, 9,
+            10, 10,
+            210, 19
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnArrowUpLarge.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnArrowUpLarge extends IconButton {
+    public BtnArrowUpLarge() {
+        super(
+            15, 15,
+            180, 0,
+            15, 15,
+            180, 15
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnPlaySmall.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnPlaySmall extends IconButton {
+    public BtnPlaySmall() {
+        super(
+            10, 10,
+            160, 0,
+            10, 10,
+            160, 10
         );
     }
 }
@@ -1525,145 +1233,25 @@ package com.bernardo.dbi.screen.widget;
 public class BtnArrowLeftSmall extends IconButton {
     public BtnArrowLeftSmall() {
         super(
-            20, 20,
-            60, 0,
-            20, 20,
-            60, 30
+            15, 15,
+            0, 0,
+            15, 15,
+            0, 15
         );
     }
 }
 
 ----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnPlay.java
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnSkipEndSmall.java
 Conteúdo:
 package com.bernardo.dbi.screen.widget;
-public class BtnPlay extends IconButton {
-    public BtnPlay() {
-        super(
-            30, 30,
-            320, 0,
-            30, 30,
-            320, 30
-        );
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnDoubleRight.java
-Conteúdo:
-package com.bernardo.dbi.screen.widget;
-public class BtnDoubleRight extends IconButton {
-    public BtnDoubleRight() {
-        super(
-            30, 30,
-            170, 0,
-            30, 30,
-            170, 30
-        );
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnCloseX.java
-Conteúdo:
-package com.bernardo.dbi.screen.widget;
-public class BtnCloseX extends IconButton {
-    public BtnCloseX() {
-        super(
-            30, 30,
-            260, 0,
-            30, 30,
-            260, 30
-        );
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/IconPlusDark.java
-Conteúdo:
-package com.bernardo.dbi.screen.widget;
-public class IconPlusDark extends IconButton {
-    public IconPlusDark() {
+public class BtnSkipEndSmall extends IconButton {
+    public BtnSkipEndSmall() {
         super(
             10, 10,
-            0,  120,
+            100, 0,
             10, 10,
-            0,  120
-        );
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/IconJarRed.java
-Conteúdo:
-package com.bernardo.dbi.screen.widget;
-public class IconJarRed extends IconButton {
-    public IconJarRed() {
-        super(
-            10, 10,
-            10, 130,
-            10, 10,
-            10, 130
-        );
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnArrowLeftBeige.java
-Conteúdo:
-package com.bernardo.dbi.screen.widget;
-public class BtnArrowLeftBeige extends IconButton {
-    public BtnArrowLeftBeige() {
-        super(
-            30, 30,
-            0,  60,
-            30, 30,
-            0,  90
-        );
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/IconPlusRed.java
-Conteúdo:
-package com.bernardo.dbi.screen.widget;
-public class IconPlusRed extends IconButton {
-    public IconPlusRed() {
-        super(
-            10, 10,
-            0,  130,
-            10, 10,
-            0,  130
-        );
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/IconPlusBeige.java
-Conteúdo:
-package com.bernardo.dbi.screen.widget;
-public class IconPlusBeige extends IconButton {
-    public IconPlusBeige() {
-        super(
-            10, 10,
-            0,  140,
-            10, 10,
-            0,  140
-        );
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnSkipStart.java
-Conteúdo:
-package com.bernardo.dbi.screen.widget;
-public class BtnSkipStart extends IconButton {
-    public BtnSkipStart() {
-        super(
-            30, 30,
-            200, 0,
-            30, 30,
-            200, 30
+            100, 10
         );
     }
 }
@@ -1675,10 +1263,10 @@ package com.bernardo.dbi.screen.widget;
 public class BtnArrowRightSmall extends IconButton {
     public BtnArrowRightSmall() {
         super(
-            20, 20,
-            80, 0,
-            20, 20,
-            80, 30
+            10, 10,
+            40, 0,
+            10, 10,
+            40, 10
         );
     }
 }
@@ -1690,25 +1278,25 @@ package com.bernardo.dbi.screen.widget;
 public class BtnArrowLeftLarge extends IconButton {
     public BtnArrowLeftLarge() {
         super(
-            30, 30,
-            0,  0,
-            30, 30,
-            0,  30
+            15, 15,
+            0, 0,
+            15, 15,
+            0, 15
         );
     }
 }
 
 ----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnConfirmDiamond.java
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnConfirmLarge.java
 Conteúdo:
 package com.bernardo.dbi.screen.widget;
-public class BtnConfirmDiamond extends IconButton {
-    public BtnConfirmDiamond() {
+public class BtnConfirmLarge extends IconButton {
+    public BtnConfirmLarge() {
         super(
-            30, 30,
-            290, 0,
-            30, 30,
-            290, 30
+            15, 15,
+            125, 0,
+            15, 15,
+            125, 15
         );
     }
 }
@@ -1720,10 +1308,10 @@ package com.bernardo.dbi.screen.widget;
 public class BtnArrowUpSmall extends IconButton {
     public BtnArrowUpSmall() {
         super(
-            20, 20,
-            100, 0,
-            20, 20,
-            100, 30
+            10, 10,
+            50, 0,
+            10, 10,
+            50, 10
         );
     }
 }
@@ -1742,7 +1330,7 @@ import net.minecraft.util.Identifier;
 public abstract class IconButton extends ClickableWidget {
 
     private static final Identifier ICONS = new Identifier("dragonblockinfinity", "textures/gui/icons_btn.png");
-    private static final int SHEET_SIZE = 512;
+    private static final int SHEET_SIZE = 256;
 
     protected final int wNormal, hNormal;
     protected final int uNormal, vNormal;
@@ -1751,6 +1339,8 @@ public abstract class IconButton extends ClickableWidget {
 
     private float scale = 1.0f;
     private boolean pressed = false;
+    private boolean locked = false;
+    private Runnable onPress = null;
 
     public IconButton(
         int wNormal, int hNormal,
@@ -1763,8 +1353,8 @@ public abstract class IconButton extends ClickableWidget {
         this.hNormal  = hNormal;
         this.uNormal  = uNormal;
         this.vNormal  = vNormal;
-        this.wPressed  = wPressed;
-        this.hPressed  = hPressed;
+        this.wPressed = wPressed;
+        this.hPressed = hPressed;
         this.uPressed = uPressed;
         this.vPressed = vPressed;
     }
@@ -1775,6 +1365,14 @@ public abstract class IconButton extends ClickableWidget {
         this.setY(y);
         this.width  = Math.max(1, Math.round(wNormal * scale));
         this.height = Math.max(1, Math.round(hNormal * scale));
+    }
+
+    public void setLocked(boolean locked) {
+        this.locked = locked;
+    }
+
+    public boolean isLocked() {
+        return locked;
     }
 
     @Override
@@ -1788,14 +1386,23 @@ public abstract class IconButton extends ClickableWidget {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (locked) return false;
         if (this.isHovered()) pressed = true;
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (locked) return false;
         pressed = false;
+        if (this.isHovered() && onPress != null) {
+            onPress.run();
+        }
         return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    public void setOnPress(Runnable onPress) {
+        this.onPress = onPress;
     }
 
     @Override
@@ -1803,31 +1410,16 @@ public abstract class IconButton extends ClickableWidget {
 }
 
 ----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnSkipEnd.java
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnSkipStartSmall.java
 Conteúdo:
 package com.bernardo.dbi.screen.widget;
-public class BtnSkipEnd extends IconButton {
-    public BtnSkipEnd() {
+public class BtnSkipStartSmall extends IconButton {
+    public BtnSkipStartSmall() {
         super(
-            30, 30,
-            230, 0,
-            30, 30,
-            230, 30
-        );
-    }
-}
-
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnArrowRightBeige.java
-Conteúdo:
-package com.bernardo.dbi.screen.widget;
-public class BtnArrowRightBeige extends IconButton {
-    public BtnArrowRightBeige() {
-        super(
-            30, 30,
-            30, 60,
-            30, 30,
-            30, 90
+            10, 10,
+            90, 0,
+            10, 10,
+            90, 10
         );
     }
 }
@@ -1839,10 +1431,25 @@ package com.bernardo.dbi.screen.widget;
 public class ScrollBarHandle extends IconButton {
     public ScrollBarHandle() {
         super(
-            10, 20,
-            500, 100,
-            10, 20,
-            500, 120
+            14, 3,
+            241, 0,
+            14, 3,
+            241, 0
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnDoubleLeftSmall.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnDoubleLeftSmall extends IconButton {
+    public BtnDoubleLeftSmall() {
+        super(
+            10, 10,
+            70, 0,
+            10, 10,
+            70, 10
         );
     }
 }
@@ -1854,10 +1461,25 @@ package com.bernardo.dbi.screen.widget;
 public class BtnArrowRightLarge extends IconButton {
     public BtnArrowRightLarge() {
         super(
-            30, 30,
-            30, 0,
-            30, 30,
-            30, 30
+            15, 15,
+            15, 0,
+            15, 15,
+            15, 15
+        );
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/screen/widget/BtnArrowDownLarge.java
+Conteúdo:
+package com.bernardo.dbi.screen.widget;
+public class BtnArrowDownLarge extends IconButton {
+    public BtnArrowDownLarge() {
+        super(
+            15, 15,
+            195, 0,
+            15, 15,
+            195, 15
         );
     }
 }
@@ -1961,18 +1583,30 @@ public interface DBIPlayerDataAccess {
     Race          dbi_getRace();
     AgeStage      dbi_getAge();
     FightingStyle dbi_getStyle();
+    Identifier    dbi_getBodyTexture();
     Identifier    dbi_getHairTexture();
     Identifier    dbi_getEyeTexture();
     Identifier    dbi_getNoseTexture();
     Identifier    dbi_getMouthTexture();
+    Identifier    dbi_getTailTexture();
+    int           dbi_getHairColor();
+    int           dbi_getEyePupilColor();
+    int           dbi_getTailColor();
+    int           dbi_getSkinColor();
 
     void dbi_setRace(Race race);
     void dbi_setAge(AgeStage age);
     void dbi_setStyle(FightingStyle style);
+    void dbi_setBodyTexture(Identifier texture);
     void dbi_setHairTexture(Identifier texture);
     void dbi_setEyeTexture(Identifier texture);
     void dbi_setNoseTexture(Identifier texture);
     void dbi_setMouthTexture(Identifier texture);
+    void dbi_setTailTexture(Identifier texture);
+    void dbi_setHairColor(int color);
+    void dbi_setEyePupilColor(int color);
+    void dbi_setTailColor(int color);
+    void dbi_setSkinColor(int color);
 }
 
 ----------------------------------------
@@ -2005,6 +1639,16 @@ public class DBIPlayerData {
     public static float getFinalDefense(PlayerEntity p) { return PlayerStats.getDefense(getRace(p), getAge(p), getStyle(p)); }
     public static float getFinalSize(PlayerEntity p)    { return PlayerStats.getSize(getRace(p), getAge(p)); }
     public static float getEyeHeightScale(PlayerEntity p) { return PlayerStats.getEyeHeight(getRace(p), getAge(p)); }
+    public static Identifier    getTailTexture(PlayerEntity p) { return ((DBIPlayerDataAccess)p).dbi_getTailTexture(); }
+    public static void setTailTexture(PlayerEntity p, Identifier t) { ((DBIPlayerDataAccess)p).dbi_setTailTexture(t); }
+    public static int getHairColor(PlayerEntity p) { return ((DBIPlayerDataAccess)p).dbi_getHairColor(); }
+    public static int getEyePupilColor(PlayerEntity p) { return ((DBIPlayerDataAccess)p).dbi_getEyePupilColor(); }
+    public static int getTailColor(PlayerEntity p) { return ((DBIPlayerDataAccess)p).dbi_getTailColor(); }
+    public static int getSkinColor(PlayerEntity p) { return ((DBIPlayerDataAccess)p).dbi_getSkinColor(); }
+    public static void setHairColor(PlayerEntity p, int c) { ((DBIPlayerDataAccess)p).dbi_setHairColor(c); }
+    public static void setEyePupilColor(PlayerEntity p, int c) { ((DBIPlayerDataAccess)p).dbi_setEyePupilColor(c); }
+    public static void setTailColor(PlayerEntity p, int c) { ((DBIPlayerDataAccess)p).dbi_setTailColor(c); }
+    public static void setSkinColor(PlayerEntity p, int c) { ((DBIPlayerDataAccess)p).dbi_setSkinColor(c); }
 }
 
 ----------------------------------------
@@ -2113,11 +1757,6 @@ Arquivo: src/main/java/com/bernardo/dbi/mixin/PlayerEntityRendererMixin.java
 Conteúdo:
 package com.bernardo.dbi.mixin;
 
-import com.bernardo.dbi.client.render.layer.EyeLayer;
-import com.bernardo.dbi.client.render.layer.HairLayer;
-import com.bernardo.dbi.client.render.layer.MouthLayer;
-import com.bernardo.dbi.client.render.layer.NoseLayer;
-import com.bernardo.dbi.client.render.layer.RaceBodyLayer;
 import com.bernardo.dbi.player.DBIPlayerData;
 import com.bernardo.dbi.player.Race;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
@@ -2125,6 +1764,7 @@ import net.minecraft.client.render.entity.EntityRendererFactory;
 import net.minecraft.client.render.entity.LivingEntityRenderer;
 import net.minecraft.client.render.entity.PlayerEntityRenderer;
 import net.minecraft.client.render.entity.model.PlayerEntityModel;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -2132,27 +1772,30 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+/**
+ * Mixin para PlayerEntityRenderer que adiciona camadas de renderização customizadas
+ * e ajusta a textura e escala do jogador baseado nos dados DBI.
+ */
 @Mixin(PlayerEntityRenderer.class)
 public abstract class PlayerEntityRendererMixin
         extends LivingEntityRenderer<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> {
 
     public PlayerEntityRendererMixin(EntityRendererFactory.Context ctx,
-                                     PlayerEntityModel<AbstractClientPlayerEntity> model,
-                                     float shadowRadius) {
+        PlayerEntityModel<AbstractClientPlayerEntity> model,
+        float shadowRadius) {
         super(ctx, model, shadowRadius);
     }
 
     @SuppressWarnings("unchecked")
     @Inject(method = "<init>", at = @At("TAIL"))
     private void dbi_addLayers(EntityRendererFactory.Context ctx, boolean slim, CallbackInfo ci) {
-        var context = (net.minecraft.client.render.entity.feature.FeatureRendererContext) this;
-        this.addFeature(new RaceBodyLayer(context));
-        this.addFeature(new HairLayer(context));
-        this.addFeature(new EyeLayer(context));
-        this.addFeature(new NoseLayer(context));
-        this.addFeature(new MouthLayer(context));
+        // Removido: camada RaceBodyLayer conforme pedido
     }
 
+    /**
+     * Sobrescreve a textura do jogador baseada na raça DBI.
+     * Isso substitui a skin padrão do Minecraft por texturas customizadas.
+     */
     @Inject(method = "getTexture", at = @At("HEAD"), cancellable = true)
     private void dbi_getRaceTexture(AbstractClientPlayerEntity player, CallbackInfoReturnable<Identifier> cir) {
         Race race = DBIPlayerData.getRace(player);
@@ -2161,9 +1804,19 @@ public abstract class PlayerEntityRendererMixin
             case ARCOSIAN -> new Identifier("dragonblockinfinity", "textures/races/arconsian.png");
             default -> new Identifier("dragonblockinfinity", "textures/races/base.png");
         };
-
-        // Se for custom, substitui a textura base do player (esquece a skin antiga)
         cir.setReturnValue(raceTexture);
+    }
+
+    /**
+     * Aplica escala ao modelo do jogador baseada no tamanho DBI.
+     * Isso garante que a renderização visual corresponda ao hitbox ajustado.
+     */
+    @Inject(method = "render", at = @At("HEAD"))
+    private void dbi_applySizeScale(AbstractClientPlayerEntity player, float yaw, float tickDelta, MatrixStack matrices, net.minecraft.client.render.VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
+        float sizeScale = DBIPlayerData.getFinalSize(player);
+        if (sizeScale != 1.0f) {
+            matrices.scale(sizeScale, sizeScale, sizeScale);
+        }
     }
 }
 
@@ -2182,27 +1835,34 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+/**
+ * Mixin para PlayerEntity que ajusta as dimensões físicas do jogador baseado na escala de tamanho DBI.
+ * Isso afeta a largura e altura do hitbox do jogador, permitindo tamanhos personalizados.
+ */
 @Mixin(PlayerEntity.class)
 public abstract class PlayerEntitySizeMixin {
 
-    // Dimensões padrão do Minecraft: 0.6 largura, 1.8 altura
-    private static final float BASE_WIDTH  = 0.6f;
-    private static final float BASE_HEIGHT = 1.8f;
-
-    // Altura dos olhos padrão (aproximadamente 1.62 do topo)
-    private static final float BASE_EYE_HEIGHT = 1.62f;
-
+    // Dimensões padrão do Minecraft para
+    /**
+     * Injeta no método getDimensions para modificar o tamanho do jogador.
+     * Aplica a escala de tamanho DBI a todas as poses para consistência.
+     * Se a escala for 1.0 (padrão), não modifica nada para otimização.
+     */
     @Inject(method = "getDimensions", at = @At("RETURN"), cancellable = true)
     private void dbi_applySize(EntityPose pose, CallbackInfoReturnable<EntityDimensions> cir) {
-        if (pose != EntityPose.STANDING) return;
         PlayerEntity self = (PlayerEntity)(Object) this;
         float sizeScale = DBIPlayerData.getFinalSize(self);
 
-        if (sizeScale == 1.0f) return;
+        // Validação: escala deve ser positiva e diferente de 1.0
+        if (sizeScale <= 0.0f || sizeScale == 1.0f) return;
 
+        // Obtém as dimensões originais
+        EntityDimensions original = cir.getReturnValue();
+
+        // Aplica a escala mantendo as proporções
         cir.setReturnValue(EntityDimensions.changing(
-            BASE_WIDTH * sizeScale,
-            BASE_HEIGHT * sizeScale
+            original.width * sizeScale,
+            original.height * sizeScale
         ));
     }
 
@@ -2232,9 +1892,12 @@ public abstract class LivingEntityEyeHeightMixin {
 
         PlayerEntity player = (PlayerEntity)(Object) this;
         float eyeHeightScale = DBIPlayerData.getEyeHeightScale(player);
-        if (eyeHeightScale == 1.0f) return;
+        if (eyeHeightScale <= 0.0f) return;
 
-        cir.setReturnValue(cir.getReturnValue() * eyeHeightScale);
+        // Apply eye height scaling (adjusted for 128x128 texture proportions)
+        float baseEyeHeight = cir.getReturnValue();
+        float scaledEyeHeight = baseEyeHeight * eyeHeightScale;
+        cir.setReturnValue(scaledEyeHeight);
     }
 }
 
@@ -2256,17 +1919,34 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+/**
+ * Mixin para PlayerEntity que adiciona dados personalizados do DBI (Dragon Block Infinity).
+ * Permite armazenar raça, estágio de idade, estilo de luta e texturas faciais do jogador.
+ * Os dados são persistidos no NBT do jogador para sobreviver ao logout/login.
+ */
 @Mixin(PlayerEntity.class)
 public abstract class PlayerEntityMixin implements DBIPlayerDataAccess {
 
-    @Unique private Race          dbi$race  = Race.SAIYAN;
-    @Unique private AgeStage      dbi$age   = AgeStage.ADULT;
-    @Unique private FightingStyle dbi$style = FightingStyle.WARRIOR;
-    @Unique private Identifier    dbi$hair  = null;
-    @Unique private Identifier    dbi$eye   = null;
-    @Unique private Identifier    dbi$nose  = null;
-    @Unique private Identifier    dbi$mouth = null;
+    // Valores padrão para os dados personalizados do jogador DBI
+    @Unique private Race          dbi$race  = Race.SAIYAN;     // Raça do jogador (ex: Saiyan, Namekian)
+    @Unique private AgeStage      dbi$age   = AgeStage.ADULT;  // Estágio de idade (ex: Criança, Adulto)
+    @Unique private FightingStyle dbi$style = FightingStyle.WARRIOR; // Estilo de luta (ex: Guerreiro, Monge)
+    @Unique private Identifier    dbi$bodyTexture = new Identifier("minecraft", "textures/entity/player/wide/steve.png"); // Textura do corpo
+    @Unique private Identifier    dbi$bodyTextureSlim = new Identifier("minecraft", "textures/entity/player/slim/alex.png"); //textura do corpo para modelo slim (Alex)
+    @Unique private Identifier    dbi$hair  = null;            // Textura do cabelo (pode ser null)
+    @Unique private Identifier    dbi$eye;            // Textura dos olhos (pode ser null)
+    @Unique private Identifier    dbi$nose;            // Textura do nariz (pode ser null)
+    @Unique private Identifier    dbi$mouth;           // Textura da boca (pode ser null)
+    @Unique private Identifier    dbi$tail;            // Textura da cauda (pode ser null)
+    @Unique private int          dbi$hairColor  = 0x000000;   // Cor do cabelo (RGB)
+    @Unique private int          dbi$eyePupilColor = 0x000000; // Cor da pupila do olho (RGB)
+    @Unique private int          dbi$tailColor = 0x8B4513;    // Cor da cauda (RGB)
+    @Unique private int          dbi$skinColor = 0xFFDBAC;    // Cor de pele (RGB)
 
+    /**
+     * Injeta no método writeCustomDataToNbt para salvar os dados DBI no NBT do jogador.
+     * Isso garante que as customizações sejam persistidas quando o jogador salva o mundo.
+     */
     @Inject(method = "writeCustomDataToNbt", at = @At("TAIL"))
     private void dbi_writeNbt(NbtCompound nbt, CallbackInfo ci) {
         nbt.putString("dbi_race",  dbi$race.name());
@@ -2276,8 +1956,18 @@ public abstract class PlayerEntityMixin implements DBIPlayerDataAccess {
         if (dbi$eye   != null) nbt.putString("dbi_eye",   dbi$eye.toString());
         if (dbi$nose  != null) nbt.putString("dbi_nose",  dbi$nose.toString());
         if (dbi$mouth != null) nbt.putString("dbi_mouth", dbi$mouth.toString());
+        if (dbi$tail  != null) nbt.putString("dbi_tail",  dbi$tail.toString());
+        nbt.putInt("dbi_hair_color", dbi$hairColor);
+        nbt.putInt("dbi_eye_pupil_color", dbi$eyePupilColor);
+        nbt.putInt("dbi_tail_color", dbi$tailColor);
+        nbt.putInt("dbi_skin_color", dbi$skinColor);
     }
 
+    /**
+     * Injeta no método readCustomDataFromNbt para carregar os dados DBI do NBT do jogador.
+     * Usa try-catch para ignorar erros se os dados estiverem corrompidos ou ausentes,
+     * mantendo os valores padrão.
+     */
     @Inject(method = "readCustomDataFromNbt", at = @At("TAIL"))
     private void dbi_readNbt(NbtCompound nbt, CallbackInfo ci) {
         try { dbi$race  = Race.valueOf(nbt.getString("dbi_race"));           } catch (Exception ignored) {}
@@ -2287,7 +1977,15 @@ public abstract class PlayerEntityMixin implements DBIPlayerDataAccess {
         if (nbt.contains("dbi_eye"))   dbi$eye   = new Identifier(nbt.getString("dbi_eye"));
         if (nbt.contains("dbi_nose"))  dbi$nose  = new Identifier(nbt.getString("dbi_nose"));
         if (nbt.contains("dbi_mouth")) dbi$mouth = new Identifier(nbt.getString("dbi_mouth"));
+        if (nbt.contains("dbi_tail"))  dbi$tail  = new Identifier(nbt.getString("dbi_tail"));
+        if (nbt.contains("dbi_hair_color")) dbi$hairColor = nbt.getInt("dbi_hair_color");
+        if (nbt.contains("dbi_eye_pupil_color")) dbi$eyePupilColor = nbt.getInt("dbi_eye_pupil_color");
+        if (nbt.contains("dbi_tail_color")) dbi$tailColor = nbt.getInt("dbi_tail_color");
+        if (nbt.contains("dbi_skin_color")) dbi$skinColor = nbt.getInt("dbi_skin_color");
     }
+
+    // Getters e setters para acessar e modificar os dados DBI do jogador
+    // Implementam a interface DBIPlayerDataAccess
 
     @Override public Race          dbi_getRace()         { return dbi$race;  }
     @Override public AgeStage      dbi_getAge()          { return dbi$age;   }
@@ -2296,6 +1994,11 @@ public abstract class PlayerEntityMixin implements DBIPlayerDataAccess {
     @Override public Identifier    dbi_getEyeTexture()   { return dbi$eye;   }
     @Override public Identifier    dbi_getNoseTexture()  { return dbi$nose;  }
     @Override public Identifier    dbi_getMouthTexture() { return dbi$mouth; }
+    @Override public Identifier    dbi_getTailTexture()  { return dbi$tail;  }
+    @Override public int           dbi_getHairColor()      { return dbi$hairColor; }
+    @Override public int           dbi_getEyePupilColor()  { return dbi$eyePupilColor; }
+    @Override public int           dbi_getTailColor()      { return dbi$tailColor; }
+    @Override public int           dbi_getSkinColor()      { return dbi$skinColor; }
 
     @Override public void dbi_setRace(Race r)              { dbi$race  = r; }
     @Override public void dbi_setAge(AgeStage a)           { dbi$age   = a; }
@@ -2304,6 +2007,11 @@ public abstract class PlayerEntityMixin implements DBIPlayerDataAccess {
     @Override public void dbi_setEyeTexture(Identifier t)  { dbi$eye   = t; }
     @Override public void dbi_setNoseTexture(Identifier t) { dbi$nose  = t; }
     @Override public void dbi_setMouthTexture(Identifier t){ dbi$mouth = t; }
+    @Override public void dbi_setTailTexture(Identifier t) { dbi$tail  = t; }
+    @Override public void dbi_setHairColor(int c)         { dbi$hairColor = c; }
+    @Override public void dbi_setEyePupilColor(int c)     { dbi$eyePupilColor = c; }
+    @Override public void dbi_setTailColor(int c)         { dbi$tailColor = c; }
+    @Override public void dbi_setSkinColor(int c)         { dbi$skinColor = c; }
 }
 
 ----------------------------------------
@@ -2311,11 +2019,14 @@ Arquivo: src/main/java/com/bernardo/dbi/Dbi.java
 Conteúdo:
 package com.bernardo.dbi;
 
+
 import com.bernardo.dbi.player.DBIPlayerEvents;
 import com.bernardo.dbi.registry.DBIBlocks;
 import com.bernardo.dbi.registry.DBICreativeTab;
+import com.bernardo.dbi.registry.DBIEntities;
 import com.bernardo.dbi.registry.DBIItems;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 
 public class Dbi implements ModInitializer {
 
@@ -2326,7 +2037,11 @@ public class Dbi implements ModInitializer {
         DBIBlocks.initialize();
         DBIItems.initialize();
         DBICreativeTab.initialize();
+        DBIEntities.initialize();
         DBIPlayerEvents.initialize();
+
+        // Registrar comandos
+        
     }
 }
 
@@ -2370,7 +2085,7 @@ public class DragonBallBlock extends Block {
 
     @Override
     public BlockState getPlacementState(ItemPlacementContext ctx) {
-        // Orient the dragon ball based on player yaw on placement (any horizontal direction)
+        // Orienta a bola de dragão baseado no ângulo do jogador ao colocar (qualquer direção horizontal)
         Direction facing = Direction.fromRotation(ctx.getPlayerYaw());
         return getDefaultState().with(FACING, facing);
     }
@@ -2410,6 +2125,7 @@ Conteúdo:
   "key.dbi.open_menu": "Abrir Menu de Personagem",
   "gui.dbi.character_menu": "Menu do Personagem",
   "gui.dbi.button.close": "Fechar",
+  "text.dragonblockinfinity.character_creation.title": "✦ Criação de Personagem ✦",
   "block.dragonblockinfinity.block_dragonball1": "Esfera do Dragão ★",
   "block.dragonblockinfinity.block_dragonball2": "Esfera do Dragão ★★",
   "block.dragonblockinfinity.block_dragonball3": "Esfera do Dragão ★★★",
@@ -2421,6 +2137,13 @@ Conteúdo:
   "block.dragonblockinfinity.namek_dirty": "Terra de Namek",
   "block.dragonblockinfinity.dirty_stone": "Pedra Suja",
   "block.dragonblockinfinity.dirty_stone_cobblestone": "Pedregulho Sujo",
+  "item.dragonblockinfinity.senzu": "Senzu",
+  "item.dragonblockinfinity.dino_meat": "Carne de Dinossauro",
+  "item.dragonblockinfinity.dino_meat_cooked": "Carne de Dinossauro Assada",
+  "item.dragonblockinfinity.nimbus": "Nuvem Voadora",
+  "item.dragonblockinfinity.radar": "Radar dasEsferas",
+  "item.dragonblockinfinity.peso": "Peso",
+  "item.dragonblockinfinity.scouter": "Scouter",
   "itemGroup.dbi_tab": "Dragon Block Infinity"
 }
 
@@ -2432,13 +2155,19 @@ Conteúdo:
   "key.dbi.open_menu": "Open Character Menu",
   "gui.dbi.character_menu": "Character Menu",
   "gui.dbi.button.close": "Close",
+  "text.dragonblockinfinity.character_creation.title": "✦ Character Creation ✦",
   "block.dragonblockinfinity.block_dragonball1": "Dragon Ball ★",
   "block.dragonblockinfinity.block_dragonball2": "Dragon Ball ★★",
   "block.dragonblockinfinity.block_dragonball3": "Dragon Ball ★★★",
   "block.dragonblockinfinity.block_dragonball4": "Dragon Ball ★★★★",
   "block.dragonblockinfinity.block_dragonball5": "Dragon Ball ★★★★★",
   "block.dragonblockinfinity.block_dragonball6": "Dragon Ball ★★★★★★",
-  "block.dragonblockinfinity.block_dragonball7": "Dragon Ball ★★★★★★★"
+  "block.dragonblockinfinity.block_dragonball7": "Dragon Ball ★★★★★★★",
+  "block.dragonblockinfinity.namek_grass": "Namek Grass",
+  "block.dragonblockinfinity.namek_dirty": "Namek Dirt",
+  "block.dragonblockinfinity.dirty_stone": "Dirty Stone",
+  "block.dragonblockinfinity.dirty_stone_cobblestone": "Dirty Cobblestone",
+  "itemGroup.dbi_tab": "Dragon Block Infinity"
 }
 
 ----------------------------------------
@@ -2937,50 +2666,214 @@ Conteúdo:
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/senzu.json
 Conteúdo:
 {
-  "parent": "item/generated",
-  "textures": {
-    "layer0": "dragonblockinfinity:item/comida/item_senzu"
-  },
-  "display": {
-    "gui":                   { "scale": [1.0, 1.0, 1.0] },
-    "ground":                { "scale": [0.5, 0.5, 0.5] },
-    "fixed":                 { "scale": [0.5, 0.5, 0.5] },
-    "firstperson_righthand": { "scale": [0.5, 0.5, 0.5] },
-    "firstperson_lefthand":  { "scale": [0.5, 0.5, 0.5] },
-    "thirdperson_righthand": { "scale": [0.5, 0.5, 0.5] },
-    "thirdperson_lefthand":  { "scale": [0.5, 0.5, 0.5] }
-  }
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "dragonblockinfinity:item/comida/item_senzu"
+    },
+    "display": {
+        "gui": {
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        "ground": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "fixed": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "firstperson_righthand": {
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "translation": [
+                0,
+                4,
+                0
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "firstperson_lefthand": {
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "translation": [
+                0,
+                4,
+                0
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "thirdperson_righthand": {
+            "rotation": [
+                -90,
+                0,
+                0
+            ],
+            "translation": [
+                0,
+                4,
+                0
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "thirdperson_lefthand": {
+            "rotation": [
+                -90,
+                0,
+                0
+            ],
+            "translation": [
+                0,
+                4,
+                0
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        }
+    }
 }
-
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/dino_meat_cooked.json
 Conteúdo:
 {
-  "parent": "item/generated",
-  "textures": {
-    "layer0": "dragonblockinfinity:item/comida/item_dino_meat_cooked"
-  },
-  "display": {
-    "gui":                   { "scale": [1.0, 1.0, 1.0] },
-    "ground":                { "scale": [0.5, 0.5, 0.5] },
-    "fixed":                 { "scale": [0.5, 0.5, 0.5] },
-    "firstperson_righthand": { "scale": [0.5, 0.5, 0.5] },
-    "firstperson_lefthand":  { "scale": [0.5, 0.5, 0.5] },
-    "thirdperson_righthand": { "scale": [0.5, 0.5, 0.5] },
-    "thirdperson_lefthand":  { "scale": [0.5, 0.5, 0.5] }
-  }
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "dragonblockinfinity:item/comida/item_dino_meat_cooked"
+    },
+    "display": {
+        "gui": {
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        "ground": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "fixed": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "firstperson_righthand": {
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "translation": [
+                0,
+                4,
+                0
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "firstperson_lefthand": {
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "translation": [
+                0,
+                4,
+                0
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "thirdperson_righthand": {
+            "rotation": [
+                -90,
+                0,
+                0
+            ],
+            "translation": [
+                0,
+                4,
+                0
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "thirdperson_lefthand": {
+            "rotation": [
+                -90,
+                0,
+                0
+            ],
+            "translation": [
+                0,
+                4,
+                0
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        }
+    }
 }
-
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/block_dragonball4.json
 Conteúdo:
-{"parent":"dragonblockinfinity:block/block_dragonblock4"}
-
+{
+    "parent": "dragonblockinfinity:block/block_dragonblock4"
+}
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/block_dragonball2.json
 Conteúdo:
-{"parent":"dragonblockinfinity:block/block_dragonblock2"}
-
+{
+    "parent": "dragonblockinfinity:block/block_dragonblock2"
+}
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/radar.json
 Conteúdo:
@@ -3003,46 +2896,343 @@ Conteúdo:
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/dirty_stone.json
 Conteúdo:
-{"parent":"dragonblockinfinity:block/dirty_stone"}
-
+{
+    "parent": "dragonblockinfinity:block/dirty_stone",
+    "display": {
+        "gui": {
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        "ground": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "fixed": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "firstperson_righthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "rotation": [
+                0,
+                90,
+                0
+            ],
+            "translation": [
+                0,
+                10,
+                0
+            ]
+        },
+        "firstperson_lefthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "rotation": [
+                0,
+                90,
+                0
+            ],
+            "translation": [
+                0,
+                10,
+                0
+            ]
+        },
+        "thirdperson_righthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "thirdperson_lefthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        }
+    }
+}
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/namek_stone.json
 Conteúdo:
 {
-  "mod_id": "dragonblockinfinity",
-  "texture_path": "textures/item/blocks/item_dirty_stone.png",
-  "texture_name": "item_dirty_stone",
-  "parent": "dragonblockinfinity:block/namek_stone"
+    "mod_id": "dragonblockinfinity",
+    "texture_path": "textures/item/blocks/item_dirty_stone.png",
+    "texture_name": "item_dirty_stone",
+    "parent": "dragonblockinfinity:block/namek_stone",
+    "display": {
+        "gui": {
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        "ground": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "fixed": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "firstperson_righthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "rotation": [
+                0,
+                90,
+                0
+            ],
+            "translation": [
+                0,
+                10,
+                0
+            ]
+        },
+        "firstperson_lefthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "rotation": [
+                0,
+                90,
+                0
+            ],
+            "translation": [
+                0,
+                10,
+                0
+            ]
+        },
+        "thirdperson_righthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "thirdperson_lefthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        }
+    }
 }
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/dirty_stone_cobblestone.json
 Conteúdo:
-{"parent":"dragonblockinfinity:block/dirty_stone_cobblestone"}
-
+{
+    "parent": "dragonblockinfinity:block/dirty_stone_cobblestone",
+    "display": {
+        "gui": {
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        "ground": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "fixed": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "firstperson_righthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "rotation": [
+                0,
+                90,
+                0
+            ],
+            "translation": [
+                0,
+                10,
+                0
+            ]
+        },
+        "firstperson_lefthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "rotation": [
+                0,
+                90,
+                0
+            ],
+            "translation": [
+                0,
+                10,
+                0
+            ]
+        },
+        "thirdperson_righthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "thirdperson_lefthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        }
+    }
+}
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/dino_meat.json
 Conteúdo:
 {
-  "parent": "item/generated",
-  "textures": {
-    "layer0": "dragonblockinfinity:item/comida/item_dino_meat"
-  },
-  "display": {
-    "gui":                   { "scale": [1.0, 1.0, 1.0] },
-    "ground":                { "scale": [0.5, 0.5, 0.5] },
-    "fixed":                 { "scale": [0.5, 0.5, 0.5] },
-    "firstperson_righthand": { "scale": [0.5, 0.5, 0.5] },
-    "firstperson_lefthand":  { "scale": [0.5, 0.5, 0.5] },
-    "thirdperson_righthand": { "scale": [0.5, 0.5, 0.5] },
-    "thirdperson_lefthand":  { "scale": [0.5, 0.5, 0.5] }
-  }
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "dragonblockinfinity:item/comida/item_dino_meat"
+    },
+    "display": {
+        "gui": {
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        "ground": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "fixed": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "firstperson_righthand": {
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "translation": [
+                0,
+                4,
+                0
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "firstperson_lefthand": {
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "translation": [
+                0,
+                4,
+                0
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "thirdperson_righthand": {
+            "rotation": [
+                -90,
+                0,
+                0
+            ],
+            "translation": [
+                0,
+                4,
+                0
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "thirdperson_lefthand": {
+            "rotation": [
+                -90,
+                0,
+                0
+            ],
+            "translation": [
+                0,
+                4,
+                0
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        }
+    }
 }
-
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/block_dragonball7.json
 Conteúdo:
-{"parent":"dragonblockinfinity:block/block_dragonblock7"}
-
+{
+    "parent": "dragonblockinfinity:block/block_dragonblock7"
+}
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/peso.json
 Conteúdo:
@@ -3065,18 +3255,92 @@ Conteúdo:
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/namek_dirty.json
 Conteúdo:
-{"parent":"dragonblockinfinity:block/namek_dirty"}
-
+{
+    "parent": "dragonblockinfinity:block/namek_dirty",
+    "display": {
+        "gui": {
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        "ground": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "fixed": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "firstperson_righthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "rotation": [
+                0,
+                90,
+                0
+            ],
+            "translation": [
+                0,
+                10,
+                0
+            ]
+        },
+        "firstperson_lefthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "rotation": [
+                0,
+                90,
+                0
+            ],
+            "translation": [
+                0,
+                10,
+                0
+            ]
+        },
+        "thirdperson_righthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "thirdperson_lefthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        }
+    }
+}
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/block_dragonball3.json
 Conteúdo:
-{"parent":"dragonblockinfinity:block/block_dragonblock3"}
-
+{
+    "parent": "dragonblockinfinity:block/block_dragonblock3"
+}
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/block_dragonball1.json
 Conteúdo:
-{"parent":"dragonblockinfinity:block/block_dragonblock1"}
-
+{
+    "parent": "dragonblockinfinity:block/block_dragonblock1"
+}
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/scouter.json
 Conteúdo:
@@ -3100,18 +3364,92 @@ Conteúdo:
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/block_dragonball6.json
 Conteúdo:
-{"parent":"dragonblockinfinity:block/block_dragonblock6"}
-
+{
+    "parent": "dragonblockinfinity:block/block_dragonblock6"
+}
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/namek_grass.json
 Conteúdo:
-{"parent":"dragonblockinfinity:block/namek_grass"}
-
+{
+    "parent": "dragonblockinfinity:block/namek_grass",
+    "display": {
+        "gui": {
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        "ground": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "fixed": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "firstperson_righthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "rotation": [
+                0,
+                90,
+                0
+            ],
+            "translation": [
+                0,
+                10,
+                0
+            ]
+        },
+        "firstperson_lefthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "rotation": [
+                0,
+                90,
+                0
+            ],
+            "translation": [
+                0,
+                10,
+                0
+            ]
+        },
+        "thirdperson_righthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "thirdperson_lefthand": {
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        }
+    }
+}
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/item/block_dragonball5.json
 Conteúdo:
-{"parent":"dragonblockinfinity:block/block_dragonblock5"}
-
+{
+    "parent": "dragonblockinfinity:block/block_dragonblock5"
+}
 ----------------------------------------
 Arquivo: src/main/resources/assets/dragonblockinfinity/models/block/block_dragonblock7.json
 Conteúdo:
@@ -12747,7 +13085,6 @@ src/main/resources/assets/dragonblockinfinity/textures/gui/menu.png
 src/main/resources/assets/dragonblockinfinity/textures/particules/hit_clash.png
 src/main/resources/assets/dragonblockinfinity/textures/races/arconsian.png
 src/main/resources/assets/dragonblockinfinity/textures/races/namekian.png
-src/main/resources/assets/dragonblockinfinity/textures/races/base.png
 src/main/resources/assets/dragonblockinfinity/textures/eyes/eye2.png
 src/main/resources/assets/dragonblockinfinity/textures/eyes/eye_arcosian1.png
 src/main/resources/assets/dragonblockinfinity/textures/eyes/eye1.png
@@ -12770,7 +13107,6 @@ src/main/resources/assets/dragonblockinfinity/textures/item/blocks/item_dirty_st
 src/main/resources/assets/dragonblockinfinity/textures/item/blocks/btem_dirty_stone_dirty.png
 src/main/resources/assets/dragonblockinfinity/textures/item/blocks/item_dirty_stone.png
 src/main/resources/assets/dragonblockinfinity/textures/npc/dinosauro1.png
-src/main/resources/assets/dragonblockinfinity/textures/npc/dinosaur.png
 src/main/resources/assets/dragonblockinfinity/textures/fx/ki_atcck_chargin.png
 src/main/resources/assets/dragonblockinfinity/textures/fx/aura/ki_aura_ssj1.png
 src/main/resources/assets/dragonblockinfinity/textures/fx/aura/ki_aura_base.png

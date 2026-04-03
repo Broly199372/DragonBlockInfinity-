@@ -1,6 +1,6 @@
 package com.bernardo.dbi;
 
-import com.bernardo.dbi.command.SpawnDinoCommand;
+
 import com.bernardo.dbi.player.DBIPlayerEvents;
 import com.bernardo.dbi.registry.DBIBlocks;
 import com.bernardo.dbi.registry.DBICreativeTab;
@@ -22,7 +22,6 @@ public class Dbi implements ModInitializer {
         DBIPlayerEvents.initialize();
 
         // Registrar comandos
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
-                SpawnDinoCommand.register(dispatcher, registryAccess));
+        
     }
 }

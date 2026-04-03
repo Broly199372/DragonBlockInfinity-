@@ -1,12 +1,11 @@
 package com.bernardo.dbi.screen.widget;
-
 public class ScrollBarTrack extends IconButton {
     public ScrollBarTrack() {
         super(
-            20, 20,
-            0, 0,
-            20, 20,
-            0, 0
+            14, 96,
+            241, 4,
+            14, 96,
+            241, 4
         );
     }
 }
