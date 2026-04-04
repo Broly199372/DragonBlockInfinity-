@@ -1,7 +1,6 @@
 package com.bernardo.dbi.mixin;
 
 import com.bernardo.dbi.player.DBIPlayerData;
-import com.bernardo.dbi.player.DBIPlayerDataAccess;
 import net.minecraft.entity.EntityDimensions;
 import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.LivingEntity;
@@ -16,16 +15,15 @@ public abstract class LivingEntityEyeHeightMixin {
 
     @Inject(method = "getEyeHeight(Lnet/minecraft/entity/EntityPose;Lnet/minecraft/entity/EntityDimensions;)F", at = @At("RETURN"), cancellable = true)
     private void dbi_applyPlayerEyeHeight(EntityPose pose, EntityDimensions dimensions, CallbackInfoReturnable<Float> cir) {
-        if (!((Object) this instanceof PlayerEntity player)) return;
+        if (!((Object) this instanceof PlayerEntity)) return;
 
-        // Null check para evitar NPE durante o construtor da entidade
-        DBIPlayerDataAccess access = (DBIPlayerDataAccess) player;
-        if (access.dbi_getRace() == null) return;
-
+        PlayerEntity player = (PlayerEntity)(Object) this;
         float eyeHeightScale = DBIPlayerData.getEyeHeightScale(player);
         if (eyeHeightScale <= 0.0f) return;
 
-        float scaledEyeHeight = cir.getReturnValue() * eyeHeightScale;
+        // Apply eye height scaling (adjusted for 128x128 texture proportions)
+        float baseEyeHeight = cir.getReturnValue();
+        float scaledEyeHeight = baseEyeHeight * eyeHeightScale;
         cir.setReturnValue(scaledEyeHeight);
     }
 }

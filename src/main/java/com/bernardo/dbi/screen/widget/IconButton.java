@@ -46,21 +46,20 @@ public abstract class IconButton extends ClickableWidget {
         this.height = Math.max(1, Math.round(hNormal * scale));
     }
 
-    public void setLocked(boolean locked) {
-        this.locked = locked;
-    }
-
-    public boolean isLocked() {
-        return locked;
-    }
+    public void setLocked(boolean locked) { this.locked = locked; }
+    public boolean isLocked() { return locked; }
 
     @Override
     public void renderButton(DrawContext context, int mouseX, int mouseY, float delta) {
-        int u = pressed ? uPressed : uNormal;
-        int v = pressed ? vPressed : vNormal;
-        int drawW = Math.max(1, Math.round((pressed ? wPressed : wNormal) * scale));
-        int drawH = Math.max(1, Math.round((pressed ? hPressed : hNormal) * scale));
-        context.drawTexture(ICONS, this.getX(), this.getY(), u, v, drawW, drawH, SHEET_SIZE, SHEET_SIZE);
+        int u      = pressed ? uPressed : uNormal;
+        int v      = pressed ? vPressed : vNormal;
+        int srcW   = pressed ? wPressed : wNormal;
+        int srcH   = pressed ? hPressed : hNormal;
+        int drawW  = Math.max(1, Math.round(srcW * scale));
+        int drawH  = Math.max(1, Math.round(srcH * scale));
+
+        // Usa a assinatura completa: x, y, u, v, width, height, regionW, regionH, textureW, textureH
+        context.drawTexture(ICONS, this.getX(), this.getY(), drawW, drawH, u, v, srcW, srcH, SHEET_SIZE, SHEET_SIZE);
     }
 
     @Override
@@ -80,9 +79,7 @@ public abstract class IconButton extends ClickableWidget {
         return super.mouseReleased(mouseX, mouseY, button);
     }
 
-    public void setOnPress(Runnable onPress) {
-        this.onPress = onPress;
-    }
+    public void setOnPress(Runnable onPress) { this.onPress = onPress; }
 
     @Override
     protected void appendClickableNarrations(NarrationMessageBuilder builder) {}

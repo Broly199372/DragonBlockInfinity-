@@ -43,13 +43,12 @@ public abstract class PlayerEntityRendererMixin
     private void dbi_getRaceTexture(AbstractClientPlayerEntity player,
                                     CallbackInfoReturnable<Identifier> cir) {
         Race race = DBIPlayerData.getRace(player);
-        switch (race) {
-            case NAMEKIAN ->
-                cir.setReturnValue(new Identifier("dragonblockinfinity", "textures/races/namekian.png"));
-            case ARCOSIAN ->
-                cir.setReturnValue(new Identifier("dragonblockinfinity", "textures/races/arconsian.png"));
-            default -> {}
-        }
+        Identifier tex = switch (race) {
+            case NAMEKIAN -> new Identifier("dragonblockinfinity", "textures/races/namekian.png");
+            case ARCOSIAN -> new Identifier("dragonblockinfinity", "textures/races/arconsian.png");
+            default -> null;
+        };
+        if (tex != null) cir.setReturnValue(tex);
     }
 
     @Inject(method = "render", at = @At("HEAD"))

@@ -26,6 +26,7 @@ Arquivo: src/main/java/com/bernardo/dbi/registry/DBIItems.java
 Conteúdo:
 package com.bernardo.dbi.registry;
 
+import com.bernardo.dbi.item.NinbusItem;
 import net.minecraft.block.Block;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.FoodComponent;
@@ -44,34 +45,34 @@ public class DBIItems {
     public static final Item BLOCK_DRAGONBALL6 = registerBlockItem("block_dragonball6", DBIBlocks.BLOCK_DRAGONBALL6);
     public static final Item BLOCK_DRAGONBALL7 = registerBlockItem("block_dragonball7", DBIBlocks.BLOCK_DRAGONBALL7);
 
-    public static final Item NAMEK_GRASS              = registerBlockItem("namek_grass",              DBIBlocks.NAMEK_GRASS);
-    public static final Item NAMEK_DIRTY              = registerBlockItem("namek_dirty",              DBIBlocks.NAMEK_DIRTY);
-    public static final Item DIRTY_STONE              = registerBlockItem("dirty_stone",              DBIBlocks.DIRTY_STONE);
-    public static final Item DIRTY_STONE_COBBLESTONE  = registerBlockItem("dirty_stone_cobblestone",  DBIBlocks.DIRTY_STONE_COBBLESTONE);
+    public static final Item NAMEK_GRASS             = registerBlockItem("namek_grass",             DBIBlocks.NAMEK_GRASS);
+    public static final Item NAMEK_DIRTY             = registerBlockItem("namek_dirty",             DBIBlocks.NAMEK_DIRTY);
+    public static final Item DIRTY_STONE             = registerBlockItem("dirty_stone",             DBIBlocks.DIRTY_STONE);
+    public static final Item DIRTY_STONE_COBBLESTONE = registerBlockItem("dirty_stone_cobblestone", DBIBlocks.DIRTY_STONE_COBBLESTONE);
 
     public static final Item SENZU = register("senzu",
-            new Item(new Item.Settings()
-                    .food(new FoodComponent.Builder()
-                            .hunger(10)
-                            .saturationModifier(1.0f)
-                            .alwaysEdible()
-                            .build())));
+        new Item(new Item.Settings()
+            .food(new FoodComponent.Builder()
+                .hunger(10)
+                .saturationModifier(1.0f)
+                .alwaysEdible()
+                .build())));
 
     public static final Item DINO_MEAT = register("dino_meat",
-            new Item(new Item.Settings()
-                    .food(new FoodComponent.Builder()
-                            .hunger(3)
-                            .saturationModifier(0.3f)
-                            .build())));
+        new Item(new Item.Settings()
+            .food(new FoodComponent.Builder()
+                .hunger(3)
+                .saturationModifier(0.3f)
+                .build())));
 
     public static final Item DINO_MEAT_COOKED = register("dino_meat_cooked",
-            new Item(new Item.Settings()
-                    .food(new FoodComponent.Builder()
-                            .hunger(8)
-                            .saturationModifier(0.8f)
-                            .build())));
+        new Item(new Item.Settings()
+            .food(new FoodComponent.Builder()
+                .hunger(8)
+                .saturationModifier(0.8f)
+                .build())));
 
-    public static final Item NINBUS  = register("ninbus",  new Item(new Item.Settings().maxCount(1)));
+    public static final Item NIMBUS  = register("nimbus",  new NinbusItem(new Item.Settings().maxCount(1)));
     public static final Item RADAR   = register("radar",   new Item(new Item.Settings().maxCount(1)));
     public static final Item PESO    = register("peso",    new Item(new Item.Settings().maxCount(16)));
     public static final Item SCOUTER = register("scouter", new Item(new Item.Settings().maxCount(1)));
@@ -123,7 +124,7 @@ public class DBICreativeTab {
                         entries.add(DBIItems.SENZU);
                         entries.add(DBIItems.DINO_MEAT);
                         entries.add(DBIItems.DINO_MEAT_COOKED);
-                        entries.add(DBIItems.NINBUS);
+                        entries.add(DBIItems.NIMBUS);
                         entries.add(DBIItems.RADAR);
                         entries.add(DBIItems.PESO);
                         entries.add(DBIItems.SCOUTER);
@@ -582,6 +583,519 @@ public class DBIPlayerModel<T extends LivingEntity> extends BipedEntityModel<T> 
 }
 
 ----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/client/render/layer/HairModel.java
+Conteúdo:
+package com.bernardo.dbi.client.render.layer;
+
+import net.minecraft.client.model.*;
+import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.entity.model.EntityModel;
+import net.minecraft.client.render.entity.model.EntityModelLayer;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.util.Identifier;
+
+public class HairModel<T extends LivingEntity> extends EntityModel<T> {
+
+    public static final EntityModelLayer LAYER = new EntityModelLayer(
+        new Identifier("dragonblockinfinity", "hair"), "main");
+
+    public final ModelPart head;
+
+    public HairModel(ModelPart root) {
+        this.head = root.getChild("head");
+    }
+
+    public static TexturedModelData getTexturedModelData() {
+        ModelData modelData = new ModelData();
+        ModelPartData partData = modelData.getRoot();
+
+        partData.addChild("head",
+            ModelPartBuilder.create()
+                .uv(0, 0).cuboid(-4f, -8f, -4f, 8, 8, 8, new Dilation(0.6f))
+                .uv(32, 0).cuboid(-4f, -8f, -4f, 8, 8, 8, new Dilation(0.7f)),
+            ModelTransform.pivot(0, 0, 0));
+
+        return TexturedModelData.of(modelData, 64, 64);
+    }
+
+    @Override
+    public void setAngles(T entity, float limbAngle, float limbDistance,
+                          float animationProgress, float headYaw, float headPitch) {}
+
+    @Override
+    public void render(MatrixStack matrices, VertexConsumer vertices,
+                       int light, int overlay,
+                       float red, float green, float blue, float alpha) {
+        head.render(matrices, vertices, light, overlay, red, green, blue, alpha);
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/client/render/layer/HairLayer.java
+Conteúdo:
+package com.bernardo.dbi.client.render.layer;
+
+import com.bernardo.dbi.player.DBIPlayerData;
+import net.minecraft.client.model.ModelPart;
+import net.minecraft.client.network.AbstractClientPlayerEntity;
+import net.minecraft.client.render.OverlayTexture;
+import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.entity.feature.FeatureRenderer;
+import net.minecraft.client.render.entity.feature.FeatureRendererContext;
+import net.minecraft.client.render.entity.model.PlayerEntityModel;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.Identifier;
+
+public class HairLayer<T extends AbstractClientPlayerEntity, M extends PlayerEntityModel<T>>
+        extends FeatureRenderer<T, M> {
+
+    private final HairStyle1Model<T> style1;
+    private final HairGokuModel<T>   goku;
+    private final HairStyle3Model<T> style3;
+
+    public HairLayer(FeatureRendererContext<T, M> context,
+                     ModelPart style1Root, ModelPart gokuRoot, ModelPart style3Root) {
+        super(context);
+        this.style1 = new HairStyle1Model<>(style1Root);
+        this.goku   = new HairGokuModel<>(gokuRoot);
+        this.style3 = new HairStyle3Model<>(style3Root);
+    }
+
+    @Override
+    public void render(MatrixStack matrices, VertexConsumerProvider vertexConsumers,
+                       int light, T entity, float limbAngle, float limbDistance,
+                       float tickDelta, float animationProgress, float headYaw, float headPitch) {
+
+        Identifier hairTex = DBIPlayerData.getHairTexture(entity);
+        if (hairTex == null) return;
+
+        int col = DBIPlayerData.getHairColor(entity);
+        float r = ((col >> 16) & 0xFF) / 255f;
+        float g = ((col >>  8) & 0xFF) / 255f;
+        float b = (col         & 0xFF) / 255f;
+
+        String path = hairTex.getPath();
+
+        if (path.contains("goku")) {
+            this.getContextModel().head.copyTransform(this.goku.head);
+            VertexConsumer vc = vertexConsumers.getBuffer(RenderLayer.getEntityTranslucent(hairTex));
+            this.goku.render(matrices, vc, light, OverlayTexture.DEFAULT_UV, r, g, b, 1f);
+        } else if (path.contains("hair3")) {
+            this.getContextModel().head.copyTransform(this.style3.hair);
+            VertexConsumer vc = vertexConsumers.getBuffer(RenderLayer.getEntityTranslucent(hairTex));
+            this.style3.render(matrices, vc, light, OverlayTexture.DEFAULT_UV, r, g, b, 1f);
+        } else {
+            this.getContextModel().head.copyTransform(this.style1.hair);
+            VertexConsumer vc = vertexConsumers.getBuffer(RenderLayer.getEntityTranslucent(hairTex));
+            this.style1.render(matrices, vc, light, OverlayTexture.DEFAULT_UV, r, g, b, 1f);
+        }
+                       }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/client/render/layer/HairStyle3Model.java
+Conteúdo:
+package com.bernardo.dbi.client.render.layer;
+
+import net.minecraft.client.model.*;
+import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.entity.model.EntityModel;
+import net.minecraft.client.render.entity.model.EntityModelLayer;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.util.Identifier;
+
+public class HairStyle3Model<T extends LivingEntity> extends EntityModel<T> {
+
+    public static final EntityModelLayer LAYER = new EntityModelLayer(
+        new Identifier("dragonblockinfinity", "hair_style3"), "main");
+
+    public final ModelPart hair;
+
+    public HairStyle3Model(ModelPart root) {
+        this.hair = root.getChild("hair");
+    }
+
+    public static TexturedModelData getTexturedModelData() {
+        ModelData modelData = new ModelData();
+        ModelPartData root = modelData.getRoot();
+
+        ModelPartData hair = root.addChild("hair",
+            ModelPartBuilder.create()
+                .uv(7, 7).cuboid(-4f, -10f, -3f, 8, 2, 7),
+            ModelTransform.pivot(0f, 0f, 0f));
+
+        hair.addChild("cube_r2",
+            ModelPartBuilder.create().uv(0, 9).cuboid(-1.0f, -3.0f, -3.0f, 3, 4, 4, new Dilation(0.1f)),
+            ModelTransform.of(4.1356f, -8.4503f, 2.9f, 0.0f, 0.0f, -2.2689f));
+
+        hair.addChild("cube_r3",
+            ModelPartBuilder.create().uv(14, 9).cuboid(-1.0f, -3.0f, -3.0f, 3, 4, 4, new Dilation(0.1f)),
+            ModelTransform.of(-3.4928f, -7.6842f, 2.9f, 0.0f, 0.0f, 2.2689f));
+
+        hair.addChild("cube_r4",
+            ModelPartBuilder.create().uv(0, 17).cuboid(-1.0f, -3.0f, -3.0f, 3, 4, 4, new Dilation(0.1f)),
+            ModelTransform.of(-3.4928f, -7.6842f, -1.1f, 0.0f, 0.0f, 2.2689f));
+
+        hair.addChild("cube_r5",
+            ModelPartBuilder.create().uv(14, 17).cuboid(-1.0f, -3.0f, -2.0f, 3, 4, 4, new Dilation(0.1f)),
+            ModelTransform.of(1.9f, -8.4503f, 4.1356f, 1.5708f, 0.6981f, -1.5708f));
+
+        hair.addChild("cube_r6",
+            ModelPartBuilder.create().uv(0, 25).cuboid(-1.0f, -3.0f, -3.0f, 3, 4, 4, new Dilation(0.1f)),
+            ModelTransform.of(-3.1f, -8.4503f, 4.1356f, 1.5708f, 0.6981f, -1.5708f));
+
+        hair.addChild("cube_r7",
+            ModelPartBuilder.create().uv(28, 16).cuboid(-1.0f, -4.0f, -1.4f, 1, 5, 1, new Dilation(0.4f)),
+            ModelTransform.of(5.5321f, -5.5382f, -1.1f, 0.0f, 0.0f, -2.5744f));
+
+        hair.addChild("cube_r8",
+            ModelPartBuilder.create().uv(30, 0).cuboid(-1.0f, -4.0f, -1.4f, 1, 5, 1, new Dilation(0.4f)),
+            ModelTransform.of(5.5321f, -5.5382f, 3.9f, 0.0f, 0.0f, -2.5744f));
+
+        hair.addChild("cube_r9",
+            ModelPartBuilder.create().uv(32, 16).cuboid(-1.0f, -4.0f, -1.0f, 1, 5, 1, new Dilation(0.4f)),
+            ModelTransform.of(5.5321f, -5.5382f, 0.9f, 0.0f, 0.0f, -2.5744f));
+
+        hair.addChild("cube_r10",
+            ModelPartBuilder.create().uv(0, 33).cuboid(-1.0f, -4.0f, -1.0f, 1, 5, 1, new Dilation(0.4f)),
+            ModelTransform.of(-6.4679f, -5.5382f, 2.9f, 0.0f, 0.0f, 2.5744f));
+
+        hair.addChild("cube_r11",
+            ModelPartBuilder.create().uv(4, 33).cuboid(-1.0f, -4.0f, -0.4f, 1, 5, 1, new Dilation(0.4f)),
+            ModelTransform.of(-6.4679f, -5.5382f, -0.1f, 0.0f, 0.0f, 2.5744f));
+
+        hair.addChild("cube_r12",
+            ModelPartBuilder.create().uv(8, 33).cuboid(-1.0f, -4.0f, -1.0f, 1, 5, 1, new Dilation(0.4f)),
+            ModelTransform.of(-6.4679f, -5.5382f, -2.1f, 0.0f, 0.0f, 2.5744f));
+
+        hair.addChild("cube_r13",
+            ModelPartBuilder.create().uv(12, 33).cuboid(-0.7321f, -4.0f, -1.0f, 1, 5, 1, new Dilation(0.4f)),
+            ModelTransform.of(2.5321f, -5.5382f, 5.9f, 2.7576f, 0.0f, 0.0f));
+
+        hair.addChild("cube_r14",
+            ModelPartBuilder.create().uv(16, 33).cuboid(-0.7321f, -4.0f, -1.0f, 1, 5, 1, new Dilation(0.4f)),
+            ModelTransform.of(-2.4679f, -5.5382f, 5.9f, 2.7576f, 0.0f, 0.0f));
+
+        hair.addChild("cube_r15",
+            ModelPartBuilder.create().uv(20, 33).cuboid(-0.0321f, -4.0f, -1.0f, 1, 5, 1, new Dilation(0.4f)),
+            ModelTransform.of(-0.4679f, -5.5382f, 5.9f, 2.7576f, 0.0f, 0.0f));
+
+        hair.addChild("cube_r16",
+            ModelPartBuilder.create().uv(28, 9).cuboid(-1.0f, -4.0f, -2.0f, 3, 4, 3, new Dilation(0.1f)),
+            ModelTransform.of(3.3695f, -9.0931f, -0.9f, 0.0f, 0.0f, -2.2689f));
+
+        hair.addChild("cube_r17",
+            ModelPartBuilder.create().uv(14, 25).cuboid(-2f, -3f, -1f, 3, 5, 3, new Dilation(0.1f)),
+            ModelTransform.of(-2f, -6f, -5f, 0.0f, 0.0f, -0.7854f));
+
+        hair.addChild("cube_r18",
+            ModelPartBuilder.create().uv(26, 25).cuboid(-1.2f, -3f, -1f, 3, 5, 3, new Dilation(0.1f)),
+            ModelTransform.of(3f, -6f, -5f, 0.0f, 0.0f, 0.7854f));
+
+        return TexturedModelData.of(modelData, 64, 64);
+    }
+
+    @Override
+    public void setAngles(T entity, float limbAngle, float limbDistance,
+                          float animationProgress, float headYaw, float headPitch) {}
+
+    @Override
+    public void render(MatrixStack matrices, VertexConsumer vertices,
+                       int light, int overlay,
+                       float red, float green, float blue, float alpha) {
+        hair.render(matrices, vertices, light, overlay, red, green, blue, alpha);
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/client/render/layer/HairStyle1Model.java
+Conteúdo:
+package com.bernardo.dbi.client.render.layer;
+
+import net.minecraft.client.model.*;
+import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.entity.model.EntityModel;
+import net.minecraft.client.render.entity.model.EntityModelLayer;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.util.Identifier;
+
+public class HairStyle1Model<T extends LivingEntity> extends EntityModel<T> {
+
+    public static final EntityModelLayer LAYER = new EntityModelLayer(
+        new Identifier("dragonblockinfinity", "hair_style1"), "main");
+
+    public final ModelPart hair;
+
+    public HairStyle1Model(ModelPart root) {
+        this.hair = root.getChild("hair");
+    }
+
+    public static TexturedModelData getTexturedModelData() {
+        ModelData modelData = new ModelData();
+        ModelPartData root = modelData.getRoot();
+
+        ModelPartData hair = root.addChild("hair",
+            ModelPartBuilder.create().uv(0, 0).cuboid(-4.0F, -2.0F, -3.0F, 8, 2, 7, new Dilation(0.0F)),
+            ModelTransform.pivot(0.0F, -8.0F, 0.0F));
+
+        hair.addChild("cube_r1",
+            ModelPartBuilder.create().uv(26, 25).cuboid(-1.8F, -3.0F, -1.0F, 3, 5, 3, new Dilation(0.1F)),
+            ModelTransform.of(-3.0F, 2.0F, -5.0F, 0.0F, 0.0F, 0.7854F));
+
+        hair.addChild("cube_r2",
+            ModelPartBuilder.create().uv(14, 25).cuboid(-1.0F, -3.0F, -1.0F, 3, 5, 3, new Dilation(0.1F)),
+            ModelTransform.of(2.0F, 2.0F, -5.0F, 0.0F, 0.0F, -0.7854F));
+
+        hair.addChild("cube_r3",
+            ModelPartBuilder.create().uv(28, 9).cuboid(-2.0F, -4.0F, -2.0F, 3, 4, 3, new Dilation(0.1F)),
+            ModelTransform.of(-3.3695F, -1.0931F, -0.9F, 0.0F, 0.0F, -2.2689F));
+
+        hair.addChild("cube_r4",
+            ModelPartBuilder.create().uv(20, 33).cuboid(-0.9679F, -4.0F, -1.0F, 1, 5, 1, new Dilation(0.4F)),
+            ModelTransform.of(0.4679F, 2.4618F, 5.9F, -2.7576F, 0.0F, 0.0F));
+
+        hair.addChild("cube_r5",
+            ModelPartBuilder.create().uv(16, 33).cuboid(-0.2679F, -4.0F, -1.0F, 1, 5, 1, new Dilation(0.4F)),
+            ModelTransform.of(2.4679F, 2.4618F, 5.9F, -2.7576F, 0.0F, 0.0F));
+
+        hair.addChild("cube_r6",
+            ModelPartBuilder.create().uv(12, 33).cuboid(-0.2679F, -4.0F, -1.0F, 1, 5, 1, new Dilation(0.4F)),
+            ModelTransform.of(-2.5321F, 2.4618F, 5.9F, -2.7576F, 0.0F, 0.0F));
+
+        hair.addChild("cube_r7",
+            ModelPartBuilder.create().uv(8, 33).cuboid(0.0F, -4.0F, -1.0F, 1, 5, 1, new Dilation(0.4F)),
+            ModelTransform.of(6.4679F, 2.4618F, -2.1F, 0.0F, 0.0F, 2.5744F));
+
+        hair.addChild("cube_r8",
+            ModelPartBuilder.create().uv(4, 33).cuboid(0.0F, -4.0F, -0.4F, 1, 5, 1, new Dilation(0.4F)),
+            ModelTransform.of(6.4679F, 2.4618F, -0.1F, 0.0F, 0.0F, 2.5744F));
+
+        hair.addChild("cube_r9",
+            ModelPartBuilder.create().uv(0, 33).cuboid(0.0F, -4.0F, -1.0F, 1, 5, 1, new Dilation(0.4F)),
+            ModelTransform.of(6.4679F, 2.4618F, 2.9F, 0.0F, 0.0F, 2.5744F));
+
+        hair.addChild("cube_r10",
+            ModelPartBuilder.create().uv(32, 16).cuboid(0.0F, -4.0F, -1.0F, 1, 5, 1, new Dilation(0.4F)),
+            ModelTransform.of(-5.5321F, 2.4618F, 0.9F, 0.0F, 0.0F, -2.5744F));
+
+        hair.addChild("cube_r11",
+            ModelPartBuilder.create().uv(30, 0).cuboid(0.0F, -4.0F, -1.4F, 1, 5, 1, new Dilation(0.4F)),
+            ModelTransform.of(-5.5321F, 2.4618F, 3.9F, 0.0F, 0.0F, -2.5744F));
+
+        hair.addChild("cube_r12",
+            ModelPartBuilder.create().uv(28, 16).cuboid(0.0F, -4.0F, -1.4F, 1, 5, 1, new Dilation(0.4F)),
+            ModelTransform.of(-5.5321F, 2.4618F, -1.1F, 0.0F, 0.0F, -2.5744F));
+
+        hair.addChild("cube_r13",
+            ModelPartBuilder.create().uv(0, 25).cuboid(-2.0F, -3.0F, -3.0F, 3, 4, 4, new Dilation(0.1F)),
+            ModelTransform.of(3.1F, -0.4503F, 4.1356F, -1.5708F, -0.6981F, -1.5708F));
+
+        hair.addChild("cube_r14",
+            ModelPartBuilder.create().uv(14, 17).cuboid(-2.0F, -3.0F, -2.0F, 3, 4, 4, new Dilation(0.1F)),
+            ModelTransform.of(-1.9F, -0.4503F, 4.1356F, -1.5708F, -0.6981F, -1.5708F));
+
+        hair.addChild("cube_r15",
+            ModelPartBuilder.create().uv(0, 17).cuboid(-2.0F, -3.0F, -3.0F, 3, 4, 4, new Dilation(0.1F)),
+            ModelTransform.of(3.4928F, 0.3158F, -1.1F, 0.0F, 0.0F, 2.2689F));
+
+        hair.addChild("cube_r16",
+            ModelPartBuilder.create().uv(14, 9).cuboid(-2.0F, -3.0F, -3.0F, 3, 4, 4, new Dilation(0.1F)),
+            ModelTransform.of(3.4928F, 0.3158F, 2.9F, 0.0F, 0.0F, 2.2689F));
+
+        hair.addChild("cube_r17",
+            ModelPartBuilder.create().uv(0, 9).cuboid(-2.0F, -3.0F, -3.0F, 3, 4, 4, new Dilation(0.1F)),
+            ModelTransform.of(-4.1356F, -0.4503F, 2.9F, 0.0F, 0.0F, -2.2689F));
+
+        return TexturedModelData.of(modelData, 64, 64);
+    }
+
+    @Override
+    public void setAngles(T entity, float limbAngle, float limbDistance,
+                          float animationProgress, float headYaw, float headPitch) {}
+
+    @Override
+    public void render(MatrixStack matrices, VertexConsumer vertices,
+                       int light, int overlay,
+                       float red, float green, float blue, float alpha) {
+        hair.render(matrices, vertices, light, overlay, red, green, blue, alpha);
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/client/render/layer/HairGokuModel.java
+Conteúdo:
+package com.bernardo.dbi.client.render.layer;
+
+import net.minecraft.client.model.*;
+import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.entity.model.EntityModel;
+import net.minecraft.client.render.entity.model.EntityModelLayer;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.util.Identifier;
+
+public class HairGokuModel<T extends LivingEntity> extends EntityModel<T> {
+
+    public static final EntityModelLayer LAYER = new EntityModelLayer(
+        new Identifier("dragonblockinfinity", "hair_goku"), "main");
+
+    public final ModelPart head;
+
+    public HairGokuModel(ModelPart root) {
+        this.head = root.getChild("head");
+    }
+
+    public static TexturedModelData getTexturedModelData() {
+        ModelData modelData = new ModelData();
+        ModelPartData root = modelData.getRoot();
+
+        ModelPartData head = root.addChild("head",
+            ModelPartBuilder.create(),
+            ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+
+        ModelPartData bone7 = head.addChild("bone7",
+            ModelPartBuilder.create(),
+            ModelTransform.of(-20.0F, -28.0F, 0.0F, 0.0F, 0.0F, 2.4871F));
+
+        bone7.addChild("bone7_r1",
+            ModelPartBuilder.create()
+                .uv(0, 23).cuboid(20.5F, -28.0F, -3.0F, 4, 4, 6, new Dilation(-1.0F))
+                .uv(20, 22).cuboid(20.5F, -26.0F, -3.0F, 4, 4, 6, new Dilation(-0.7F)),
+            ModelTransform.of(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, -1.0036F));
+
+        bone7.addChild("bone7_r2",
+            ModelPartBuilder.create().uv(0, 12).cuboid(23.3F, -21.0F, -3.0F, 4, 5, 6, new Dilation(-0.3F)),
+            ModelTransform.of(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, -1.1345F));
+
+        ModelPartData bone6 = head.addChild("bone6",
+            ModelPartBuilder.create(),
+            ModelTransform.pivot(1.0F, 22.0F, 0.0F));
+
+        bone6.addChild("bone6_r1",
+            ModelPartBuilder.create().uv(48, 52).cuboid(-28.2F, -2.0F, -2.0F, 2, 2, 4, new Dilation(-0.3F)),
+            ModelTransform.of(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.7453F));
+
+        bone6.addChild("bone6_r2",
+            ModelPartBuilder.create().uv(0, 43).cuboid(-26.3F, -10.0F, -2.0F, 2, 3, 4, new Dilation(0.0F)),
+            ModelTransform.of(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.3963F));
+
+        ModelPartData bone4 = head.addChild("bone4",
+            ModelPartBuilder.create(),
+            ModelTransform.pivot(0.0F, 24.0F, 0.0F));
+
+        bone4.addChild("bone4_r1",
+            ModelPartBuilder.create().uv(40, 42).cuboid(26.6F, -26.0F, -3.0F, 3, 4, 6, new Dilation(-0.5F)),
+            ModelTransform.of(-17.0F, -6.0F, 0.0F, 0.0F, 0.0F, -0.3927F));
+
+        bone4.addChild("bone4_r2",
+            ModelPartBuilder.create().uv(40, 31).cuboid(21.0F, -29.0F, -3.0F, 3, 5, 6, new Dilation(-0.3F)),
+            ModelTransform.of(-17.0F, -6.0F, 0.0F, 0.0F, 0.0F, -0.1745F));
+
+        bone4.addChild("bone4_r3",
+            ModelPartBuilder.create().uv(40, 20).cuboid(15.0F, -30.0F, -3.0F, 3, 5, 6, new Dilation(0.0F)),
+            ModelTransform.of(-17.0F, -6.0F, 0.0F, 0.0F, 0.0F, 0.0436F));
+
+        ModelPartData bone5 = head.addChild("bone5",
+            ModelPartBuilder.create(),
+            ModelTransform.pivot(-1.0F, 24.0F, 0.0F));
+
+        bone5.addChild("bone5_r1",
+            ModelPartBuilder.create()
+                .uv(12, 51).cuboid(-26.3F, -9.0F, -2.0F, 2, 3, 4, new Dilation(-0.3F))
+                .uv(0, 50).cuboid(-26.3F, -8.0F, -2.0F, 2, 3, 4, new Dilation(0.0F)),
+            ModelTransform.of(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.4835F));
+
+        ModelPartData bone2 = head.addChild("bone2",
+            ModelPartBuilder.create(),
+            ModelTransform.pivot(0.0F, 24.0F, 0.0F));
+
+        bone2.addChild("bone2_r1",
+            ModelPartBuilder.create()
+                .uv(40, 0).cuboid(26.7F, -18.0F, -3.0F, 4, 4, 6, new Dilation(-1.0F))
+                .uv(0, 33).cuboid(26.7F, -16.0F, -3.0F, 4, 4, 6, new Dilation(-0.7F)),
+            ModelTransform.of(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, -1.3526F));
+
+        bone2.addChild("bone2_r2",
+            ModelPartBuilder.create()
+                .uv(20, 32).cuboid(23.0F, -20.0F, -3.0F, 4, 4, 6, new Dilation(-0.5F))
+                .uv(20, 42).cuboid(23.0F, -18.0F, -3.0F, 4, 3, 6, new Dilation(0.0F)),
+            ModelTransform.of(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, -1.1345F));
+
+        ModelPartData bone3 = bone2.addChild("bone3",
+            ModelPartBuilder.create(),
+            ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+
+        bone3.addChild("bone3_r1",
+            ModelPartBuilder.create().uv(20, 11).cuboid(28.5F, 3.0F, -3.0F, 4, 5, 6, new Dilation(-1.3F)),
+            ModelTransform.of(-17.0F, -9.0F, 0.0F, 0.0F, 0.0F, -1.4835F));
+
+        bone3.addChild("bone3_r2",
+            ModelPartBuilder.create().uv(0, 0).cuboid(27.5F, -11.0F, -3.0F, 4, 6, 6, new Dilation(-0.9F)),
+            ModelTransform.of(-17.0F, -9.0F, 0.0F, 0.0F, 0.0F, -0.9599F));
+
+        bone3.addChild("bone3_r3",
+            ModelPartBuilder.create().uv(20, 0).cuboid(24.0F, -16.0F, -3.0F, 4, 5, 6, new Dilation(-0.5F)),
+            ModelTransform.of(-17.0F, -9.0F, 0.0F, 0.0F, 0.0F, -0.6545F));
+
+        bone3.addChild("bone3_r4",
+            ModelPartBuilder.create().uv(40, 10).cuboid(23.0F, -19.0F, -3.0F, 4, 4, 6, new Dilation(0.0F)),
+            ModelTransform.of(-17.0F, -6.0F, 0.0F, 0.0F, 0.0F, -0.48F));
+
+        ModelPartData bone = head.addChild("bone",
+            ModelPartBuilder.create(),
+            ModelTransform.pivot(0.0F, 24.0F, 0.0F));
+
+        bone.addChild("bone_r1",
+            ModelPartBuilder.create()
+                .uv(36, 52).cuboid(21.0F, -17.0F, -2.0F, 2, 3, 4, new Dilation(-0.3F))
+                .uv(24, 51).cuboid(21.0F, -16.0F, -2.0F, 2, 3, 4, new Dilation(0.0F)),
+            ModelTransform.of(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, -1.1781F));
+
+        head.addChild("pelo1",
+            ModelPartBuilder.create().uv(10, 58).cuboid(-3.5F, -10.0F, -4.6F, 1, 2, 2, new Dilation(0.0F)),
+            ModelTransform.of(-2.7F, 2.2F, -3.6F, -0.2104F, 0.3108F, 0.3259F));
+
+        head.addChild("pelo2",
+            ModelPartBuilder.create().uv(58, 24).cuboid(-3.3F, -10.0F, -4.6F, 1, 2, 2, new Dilation(0.0F)),
+            ModelTransform.of(-1.0F, 4.0F, -4.3F, -0.2834F, 0.2464F, 0.0619F));
+
+        head.addChild("pelo5",
+            ModelPartBuilder.create().uv(0, 57).cuboid(-1.3F, -1.25F, -1.0F, 2, 2, 2, new Dilation(0.0F)),
+            ModelTransform.of(-0.45F, -7.494F, -3.9192F, -0.37F, -0.051F, -0.7659F));
+
+        head.addChild("pelo6",
+            ModelPartBuilder.create().uv(18, 58).cuboid(-3.3F, -10.0F, -4.6F, 1, 2, 2, new Dilation(0.0F)),
+            ModelTransform.of(6.5F, 1.8F, -4.4F, -0.3625F, 0.0913F, -0.3995F));
+
+        head.addChild("pelo7",
+            ModelPartBuilder.create().uv(12, 43).cuboid(-3.5F, -10.0F, -4.6F, 2, 2, 2, new Dilation(0.0F)),
+            ModelTransform.of(10.4F, -2.6F, -3.6F, -0.37F, -0.051F, -0.7659F));
+
+        head.addChild("pelo8",
+            ModelPartBuilder.create().uv(58, 20).cuboid(-3.37F, -9.8201F, -5.0656F, 1, 2, 2, new Dilation(0.0F)),
+            ModelTransform.of(10.0F, 1.2F, -3.6F, -0.3687F, 0.06F, -0.4812F));
+
+        return TexturedModelData.of(modelData, 128, 128);
+    }
+
+    @Override
+    public void setAngles(T entity, float limbAngle, float limbDistance,
+                          float animationProgress, float headYaw, float headPitch) {}
+
+    @Override
+    public void render(MatrixStack matrices, VertexConsumer vertices,
+                       int light, int overlay,
+                       float red, float green, float blue, float alpha) {
+        head.render(matrices, vertices, light, overlay, red, green, blue, alpha);
+    }
+}
+
+----------------------------------------
 Arquivo: src/main/java/com/bernardo/dbi/client/KeyBindings.java
 Conteúdo:
 package com.bernardo.dbi.client;
@@ -610,13 +1124,13 @@ Arquivo: src/main/java/com/bernardo/dbi/client/ClientSetup.java
 Conteúdo:
 package com.bernardo.dbi.client;
 
-
-import com.bernardo.dbi.registry.DBIEntities;
+import com.bernardo.dbi.client.render.layer.HairGokuModel;
+import com.bernardo.dbi.client.render.layer.HairStyle1Model;
+import com.bernardo.dbi.client.render.layer.HairStyle3Model;
 import com.bernardo.dbi.screen.CaracterScreen;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.MinecraftClient;
 
 public class ClientSetup implements ClientModInitializer {
@@ -625,12 +1139,10 @@ public class ClientSetup implements ClientModInitializer {
     public void onInitializeClient() {
         KeyBindings.initialize();
 
-        // ── Registra os layers dos modelos de entidade ────────────────────────
-        
+        EntityModelLayerRegistry.registerModelLayer(HairStyle1Model.LAYER, HairStyle1Model::getTexturedModelData);
+        EntityModelLayerRegistry.registerModelLayer(HairGokuModel.LAYER,   HairGokuModel::getTexturedModelData);
+        EntityModelLayerRegistry.registerModelLayer(HairStyle3Model.LAYER, HairStyle3Model::getTexturedModelData);
 
-        // ── Registra renderers de entidade ──────────────────────────────
-
-        // ── Tecla para abrir o menu ────────────────────────────────────────────
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (KeyBindings.OPEN_MENU.wasPressed()) {
                 if (client.player != null) {
@@ -638,246 +1150,6 @@ public class ClientSetup implements ClientModInitializer {
                 }
             }
         });
-    }
-}
-----------------------------------------
-Arquivo: src/main/java/com/bernardo/dbi/client/model/Dinossauro1Model.java
-Conteúdo:
-package com.bernardo.dbi.client.model;
-
-import net.minecraft.client.model.*;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.entity.model.EntityModel;
-import net.minecraft.client.render.entity.model.EntityModelLayer;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.Identifier;
-
-public class Dinossauro1Model<T extends Entity> extends EntityModel<T> {
-
-    public static final EntityModelLayer LAYER = new EntityModelLayer(
-            new Identifier("dragonblockinfinity", "dinossauro1"), "main");
-
-    private final ModelPart Root;
-    private final ModelPart Corpo;
-    private final ModelPart Corpo2;
-    private final ModelPart Head;
-    private final ModelPart Eye;
-    private final ModelPart Eye2;
-    private final ModelPart LegRigth;
-    private final ModelPart Base;
-    private final ModelPart Canela;
-    private final ModelPart Joelho;
-    private final ModelPart Coxa;
-    private final ModelPart finger3;
-    private final ModelPart Claw;
-    private final ModelPart LegLeft;
-    private final ModelPart Base2;
-    private final ModelPart Canela2;
-    private final ModelPart Joelho2;
-    private final ModelPart Coxa2;
-    private final ModelPart finger4;
-    private final ModelPart Claw2;
-    private final ModelPart ArmRight;
-    private final ModelPart Arm1;
-    private final ModelPart forearm;
-    private final ModelPart finger;
-    private final ModelPart ArmLeft;
-    private final ModelPart Arm2;
-    private final ModelPart forearm2;
-    private final ModelPart finger2;
-    private final ModelPart Tail;
-    private final ModelPart tail1;
-    private final ModelPart tail2;
-    private final ModelPart tail3;
-    private final ModelPart tail4;
-
-    public Dinossauro1Model(ModelPart root) {
-        this.Root      = root.getChild("Root");
-        this.Corpo     = this.Root.getChild("Corpo");
-        this.Corpo2    = this.Corpo.getChild("Corpo2");
-        this.Head      = this.Root.getChild("Head");
-        this.Eye       = this.Head.getChild("Eye");
-        this.Eye2      = this.Head.getChild("Eye2");
-        this.LegRigth  = this.Root.getChild("LegRigth");
-        this.Base      = this.LegRigth.getChild("Base");
-        this.Canela    = this.LegRigth.getChild("Canela");
-        this.Joelho    = this.LegRigth.getChild("Joelho");
-        this.Coxa      = this.LegRigth.getChild("Coxa");
-        this.finger3   = this.LegRigth.getChild("finger3");
-        this.Claw      = this.finger3.getChild("Claw");
-        this.LegLeft   = this.Root.getChild("LegLeft");
-        this.Base2     = this.LegLeft.getChild("Base2");
-        this.Canela2   = this.LegLeft.getChild("Canela2");
-        this.Joelho2   = this.LegLeft.getChild("Joelho2");
-        this.Coxa2     = this.LegLeft.getChild("Coxa2");
-        this.finger4   = this.LegLeft.getChild("finger4");
-        this.Claw2     = this.finger4.getChild("Claw2");
-        this.ArmRight  = this.Root.getChild("ArmRight");
-        this.Arm1      = this.ArmRight.getChild("Arm1");
-        this.forearm   = this.ArmRight.getChild("forearm");
-        this.finger    = this.ArmRight.getChild("finger");
-        this.ArmLeft   = this.Root.getChild("ArmLeft");
-        this.Arm2      = this.ArmLeft.getChild("Arm2");
-        this.forearm2  = this.ArmLeft.getChild("forearm2");
-        this.finger2   = this.ArmLeft.getChild("finger2");
-        this.Tail      = this.Root.getChild("Tail");
-        this.tail1     = this.Tail.getChild("tail1");
-        this.tail2     = this.Tail.getChild("tail2");
-        this.tail3     = this.Tail.getChild("tail3");
-        this.tail4     = this.Tail.getChild("tail4");
-    }
-
-    public static TexturedModelData getTexturedModelData() {
-        ModelData modelData = new ModelData();
-        ModelPartData partData = modelData.getRoot();
-
-        ModelPartData Root = partData.addChild("Root",
-                ModelPartBuilder.create(), ModelTransform.pivot(-3.0F, 0.5F, -16.8333F));
-
-        ModelPartData Corpo = Root.addChild("Corpo", ModelPartBuilder.create()
-                .uv(0, 0).cuboid(-11.0F, -8.0F, -9.0F, 22.0F, 19.0F, 17.0F, new Dilation(0.0F))
-                .uv(0, 72).cuboid(-10.0F, -7.0F, 8.0F, 20.0F, 17.0F, 17.0F, new Dilation(0.0F)),
-                ModelTransform.pivot(3.0F, -6.5F, 18.8333F));
-
-        ModelPartData Corpo2 = Corpo.addChild("Corpo2", ModelPartBuilder.create()
-                .uv(75, 37).cuboid(-8.0F, -4.157F, -16.7409F, 15.0F, 13.0F, 21.0F, new Dilation(0.0F)),
-                ModelTransform.of(0.0F, -3.0F, -16.0F, -0.6981F, 0.0F, 0.0F));
-
-        Corpo2.addChild("Corpo2_r1", ModelPartBuilder.create()
-                .uv(0, 107).cuboid(-8.0F, -7.5F, -3.5F, 15.0F, 12.0F, 14.0F, new Dilation(0.0F)),
-                ModelTransform.of(0.0F, 6.4819F, -24.0425F, 0.3491F, 0.0F, 0.0F));
-
-        Corpo2.addChild("Corpo2_r2", ModelPartBuilder.create()
-                .uv(0, 37).cuboid(-10.0F, -2.0F, -2.0F, 19.0F, 16.0F, 18.0F, new Dilation(0.0F)),
-                ModelTransform.of(0.0F, -3.4691F, -3.14F, 0.3491F, 0.0F, 0.0F));
-
-        ModelPartData Head = Root.addChild("Head", ModelPartBuilder.create()
-                .uv(119, 169).cuboid(-6.4818F, -5.4366F, 9.6761F, 13.0F, 11.0F, 7.0F, new Dilation(0.7F))
-                .uv(140, 121).cuboid(-6.4818F, -4.4366F, 1.6761F, 13.0F, 1.0F, 7.0F, new Dilation(0.7F))
-                .uv(140, 103).cuboid(-6.4818F, -2.4366F, -6.3239F, 13.0F, 2.0F, 15.0F, new Dilation(0.7F))
-                .uv(116, 133).cuboid(-6.4818F, 0.5634F, -6.3239F, 13.0F, 3.0F, 15.0F, new Dilation(0.7F))
-                .uv(0, 134).cuboid(-6.9818F, 4.4634F, -5.8239F, 14.0F, 1.0F, 15.0F, new Dilation(0.2F)),
-                ModelTransform.pivot(2.4818F, -22.0634F, -37.8427F));
-
-        Head.addChild("head11_r1", ModelPartBuilder.create().uv(82, 165).cuboid(-7.0F, -0.5F, -0.5F, 14.0F, 1.0F, 2.0F, new Dilation(0.2F)), ModelTransform.of(0.0182F, -1.8707F, -7.1915F, -2.0071F, 0.0F, 0.0F));
-        Head.addChild("head10_r1", ModelPartBuilder.create().uv(82, 161).cuboid(-7.0F, -0.5F, -0.5F, 14.0F, 1.0F, 2.0F, new Dilation(0.2F)), ModelTransform.of(0.0182F, 0.1326F, -7.9081F, -1.6581F, 0.0F, 0.0F));
-        Head.addChild("head9_r1",  ModelPartBuilder.create().uv(148, 67).cuboid(-7.0F, -0.5F, -0.5F, 14.0F, 1.0F, 2.0F, new Dilation(0.2F)), ModelTransform.of(0.0182F, 2.0628F, -7.8094F, -1.0908F, 0.0F, 0.0F));
-        Head.addChild("head8_r1",  ModelPartBuilder.create().uv(142, 96).cuboid(-7.0F, -0.5F, -0.5F, 14.0F, 1.0F, 2.0F, new Dilation(0.2F)), ModelTransform.of(0.0182F, 3.9371F, -6.6564F, -0.829F, 0.0F, 0.0F));
-        Head.addChild("head6_r1",  ModelPartBuilder.create().uv(112, 30).cuboid(-7.5F, -1.0F, -1.5F, 13.0F, 1.0F, 3.0F, new Dilation(0.6F)), ModelTransform.of(0.9182F, -4.12F, 7.2721F, 0.2182F, 0.0F, 0.0F));
-        Head.addChild("head5_r1",  ModelPartBuilder.create().uv(79, 30).cuboid(-7.5F, -1.0F, -1.5F, 13.0F, 1.0F, 3.0F, new Dilation(0.6F)), ModelTransform.of(0.9182F, -2.701F, -0.0426F, 0.5236F, 0.0F, 0.0F));
-
-        ModelPartData Eye = Head.addChild("Eye", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
-        Eye.addChild("eye2_r1", ModelPartBuilder.create().uv(181, 121).cuboid(-3.0F, -4.0F, -1.0F, 4.0F, 4.0F, 4.0F, new Dilation(0.0F)), ModelTransform.of(7.0F, -1.0F, 9.0F, 0.3927F, 0.0F, 0.0F));
-        Eye.addChild("eye_r1",  ModelPartBuilder.create().uv(179, 173).cuboid(-3.0F, -2.0F, -2.0F, 4.0F, 2.0F, 5.0F, new Dilation(0.2F)), ModelTransform.of(8.0F, -0.4F, 9.9946F, 0.3927F, 0.0F, 0.0F));
-        Eye.addChild("eye1_r1", ModelPartBuilder.create().uv(179, 165).cuboid(-3.0F, -2.0F, -1.4163F, 4.0F, 2.0F, 5.0F, new Dilation(0.2F)), ModelTransform.of(7.0F, -4.6824F, 7.3923F, 0.3927F, 0.0F, 0.0F));
-
-        ModelPartData Eye2 = Head.addChild("Eye2", ModelPartBuilder.create(), ModelTransform.pivot(-14.0F, 0.0F, -1.0F));
-        Eye2.addChild("eye3_r1", ModelPartBuilder.create().uv(181, 121).cuboid(-3.0F, -4.0F, -1.0F, 4.0F, 4.0F, 4.0F, new Dilation(0.0F)), ModelTransform.of(9.0F, -1.0F, 9.0F, 0.3927F, 0.0F, 0.0F));
-        Eye2.addChild("eye_r2",  ModelPartBuilder.create().uv(179, 173).cuboid(-3.0F, -2.0F, -1.0F, 4.0F, 2.0F, 5.0F, new Dilation(0.2F)), ModelTransform.of(8.0F, -0.4F, 8.9946F, 0.3927F, 0.0F, 0.0F));
-        Eye2.addChild("eye2_r2", ModelPartBuilder.create().uv(179, 165).cuboid(-3.0F, -2.0F, -2.4163F, 4.0F, 2.0F, 5.0F, new Dilation(0.2F)), ModelTransform.of(9.0F, -4.6824F, 8.3923F, 0.3927F, 0.0F, 0.0F));
-
-        // ── LEG RIGHT ────────────────────────────────────────────────────────
-        ModelPartData LegRigth = Root.addChild("LegRigth", ModelPartBuilder.create(), ModelTransform.pivot(18.0F, 21.0F, 17.3333F));
-        LegRigth.addChild("Base", ModelPartBuilder.create().uv(148, 50).cuboid(-5.0F, -0.5F, 0.0F, 13.0F, 3.0F, 13.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
-
-        ModelPartData Canela = LegRigth.addChild("Canela", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
-        Canela.addChild("canela1_r1", ModelPartBuilder.create().uv(45, 161).cuboid(-2.0F, -12.0F, -6.0F, 9.0F, 14.0F, 9.0F, new Dilation(0.0F)), ModelTransform.of(-1.0F, -0.5F, 8.0F, -0.3054F, 0.0F, 0.0F));
-
-        ModelPartData Joelho = LegRigth.addChild("Joelho", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
-        Joelho.addChild("joelho_r1", ModelPartBuilder.create().uv(142, 72).cuboid(-3.0F, -5.0F, -6.0F, 11.0F, 9.0F, 14.0F, new Dilation(0.0F)), ModelTransform.of(-1.0F, -13.263F, 6.0427F, -0.3054F, 0.0F, 0.0F));
-
-        ModelPartData Coxa = LegRigth.addChild("Coxa", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
-        Coxa.addChild("cube_r1", ModelPartBuilder.create().uv(148, 24).cuboid(-5.0F, -14.0F, -5.0F, 13.0F, 16.0F, 9.0F, new Dilation(0.0F)), ModelTransform.of(0.0F, -15.0F, -2.0F, -0.5236F, 0.0F, 0.0F));
-
-        ModelPartData finger3 = LegRigth.addChild("finger3", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
-        finger3.addChild("finger3_r1", ModelPartBuilder.create().uv(184, 96).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.3F)), ModelTransform.of(7.1794F, 1.3026F, -0.4511F, -0.3054F, -0.3927F, 0.0F));
-        finger3.addChild("finger3_r2", ModelPartBuilder.create().uv(175, 96).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.3F)), ModelTransform.of(3.1794F, 1.3026F, -0.4511F, -0.3054F, 0.0F, 0.0F));
-        finger3.addChild("finger3_r3", ModelPartBuilder.create().uv(45, 151).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.3F)), ModelTransform.of(-0.8206F, 1.3026F, -0.4511F, -0.3054F, 0.0F, 0.0F));
-        finger3.addChild("finger3_r4", ModelPartBuilder.create().uv(59, 127).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.3F)), ModelTransform.of(-4.8206F, 1.3026F, -0.4511F, -0.3054F, 0.3927F, 0.0F));
-
-        ModelPartData Claw = finger3.addChild("Claw", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
-        Claw.addChild("claw2_r1", ModelPartBuilder.create().uv(0, 186).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.25F)), ModelTransform.of(-5.2786F, 0.2862F, -1.7374F, 1.8762F, 0.3927F, 0.0F));
-        Claw.addChild("claw3_r1", ModelPartBuilder.create().uv(18, 186).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.25F)), ModelTransform.of(7.6374F, 0.2862F, -1.7374F, 1.8762F, -0.3927F, 0.0F));
-        Claw.addChild("claw2_r2", ModelPartBuilder.create().uv(9, 186).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.25F)), ModelTransform.of(3.1294F, 0.2862F, -1.8156F, 1.8762F, 0.0F, 0.0F));
-        Claw.addChild("claw1_r1", ModelPartBuilder.create().uv(68, 185).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.25F)), ModelTransform.of(-0.8706F, 0.2862F, -1.8156F, 1.8762F, 0.0F, 0.0F));
-
-        // ── LEG LEFT ─────────────────────────────────────────────────────────
-        ModelPartData LegLeft = Root.addChild("LegLeft", ModelPartBuilder.create(), ModelTransform.pivot(-14.0F, 21.0F, 17.3333F));
-        LegLeft.addChild("Base2", ModelPartBuilder.create().uv(116, 152).cuboid(-5.0F, -0.5F, 0.0F, 13.0F, 3.0F, 13.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
-
-        ModelPartData Canela2 = LegLeft.addChild("Canela2", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
-        Canela2.addChild("canela2_r1", ModelPartBuilder.create().uv(82, 169).cuboid(-2.0F, -12.0F, -6.0F, 9.0F, 14.0F, 9.0F, new Dilation(0.0F)), ModelTransform.of(-1.0F, -0.5F, 8.0F, -0.3054F, 0.0F, 0.0F));
-
-        ModelPartData Joelho2 = LegLeft.addChild("Joelho2", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
-        Joelho2.addChild("joelho_r2", ModelPartBuilder.create().uv(144, 0).cuboid(-3.0F, -2.0F, -6.0F, 11.0F, 9.0F, 14.0F, new Dilation(0.0F)), ModelTransform.of(-1.0F, -16.263F, 7.0427F, -0.3054F, 0.0F, 0.0F));
-
-        ModelPartData Coxa2 = LegLeft.addChild("Coxa2", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
-        Coxa2.addChild("cube_r2", ModelPartBuilder.create().uv(0, 151).cuboid(-5.0F, -14.0F, -5.0F, 13.0F, 16.0F, 9.0F, new Dilation(0.0F)), ModelTransform.of(0.0F, -15.0F, -2.0F, -0.5236F, 0.0F, 0.0F));
-
-        ModelPartData finger4 = LegLeft.addChild("finger4", ModelPartBuilder.create(), ModelTransform.pivot(1.0F, 0.0F, 0.0F));
-        finger4.addChild("finger4_r1", ModelPartBuilder.create().uv(137, 188).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.3F)), ModelTransform.of(7.1794F, 1.3026F, -0.4511F, -0.3054F, -0.3927F, 0.0F));
-        finger4.addChild("finger4_r2", ModelPartBuilder.create().uv(128, 188).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.3F)), ModelTransform.of(3.1794F, 1.3026F, -0.4511F, -0.3054F, 0.0F, 0.0F));
-        finger4.addChild("finger4_r3", ModelPartBuilder.create().uv(119, 188).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.3F)), ModelTransform.of(-0.8206F, 1.3026F, -0.4511F, -0.3054F, 0.0F, 0.0F));
-        finger4.addChild("finger4_r4", ModelPartBuilder.create().uv(27, 186).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.3F)), ModelTransform.of(-4.8206F, 1.3026F, -0.4511F, -0.3054F, 0.3927F, 0.0F));
-
-        ModelPartData Claw2 = finger4.addChild("Claw2", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
-        Claw2.addChild("claw3_r2", ModelPartBuilder.create().uv(68, 191).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.25F)), ModelTransform.of(-5.2786F, 0.2862F, -1.7374F, 1.8762F, 0.3927F, 0.0F));
-        Claw2.addChild("claw4_r1", ModelPartBuilder.create().uv(188, 154).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.25F)), ModelTransform.of(7.6374F, 0.2862F, -1.7374F, 1.8762F, -0.3927F, 0.0F));
-        Claw2.addChild("claw3_r3", ModelPartBuilder.create().uv(188, 148).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.25F)), ModelTransform.of(3.1294F, 0.2862F, -1.8156F, 1.8762F, 0.0F, 0.0F));
-        Claw2.addChild("claw2_r3", ModelPartBuilder.create().uv(146, 188).cuboid(-1.0F, -2.0F, -1.0F, 2.0F, 3.0F, 2.0F, new Dilation(0.25F)), ModelTransform.of(-0.8706F, 0.2862F, -1.8156F, 1.8762F, 0.0F, 0.0F));
-
-        // ── ARM RIGHT ────────────────────────────────────────────────────────
-        ModelPartData ArmRight = Root.addChild("ArmRight", ModelPartBuilder.create(), ModelTransform.pivot(10.0F, -5.0F, -8.6667F));
-        ModelPartData Arm1 = ArmRight.addChild("Arm1", ModelPartBuilder.create(), ModelTransform.pivot(8.0F, 0.0F, 0.0F));
-        Arm1.addChild("Arm1_r1", ModelPartBuilder.create().uv(169, 152).cuboid(-3.0F, -2.0F, -1.0F, 5.0F, 8.0F, 4.0F, new Dilation(0.0F)), ModelTransform.of(-4.0F, 3.2958F, 10.6568F, -0.3927F, 0.0F, 0.0F));
-
-        ModelPartData forearm = ArmRight.addChild("forearm", ModelPartBuilder.create(), ModelTransform.pivot(-4.0F, 0.0F, 0.0F));
-        forearm.addChild("ForeArm_r1", ModelPartBuilder.create().uv(173, 139).cuboid(-2.0F, -2.0F, -2.0F, 5.0F, 4.0F, 4.0F, new Dilation(0.0F)), ModelTransform.of(7.0F, 11.3496F, 11.8594F, 1.0472F, 0.0F, 0.0F));
-        forearm.addChild("ForeArm_r2", ModelPartBuilder.create().uv(173, 130).cuboid(-2.0F, -2.0F, -2.0F, 5.0F, 4.0F, 4.0F, new Dilation(0.0F)), ModelTransform.of(7.0F, 9.4238F, 10.0947F, 0.4363F, 0.0F, 0.0F));
-
-        ModelPartData finger = ArmRight.addChild("finger", ModelPartBuilder.create(), ModelTransform.pivot(-4.0F, 0.0F, 0.0F));
-        finger.addChild("finger3_r5", ModelPartBuilder.create()
-                .uv(179, 181).cuboid(0.0F, -2.0F, -3.0F, 1.0F, 3.0F, 6.0F, new Dilation(0.0F))
-                .uv(59, 117).cuboid(2.0F, -2.0F, -3.0F, 1.0F, 3.0F, 6.0F, new Dilation(0.0F))
-                .uv(59, 107).cuboid(4.0F, -2.0F, -3.0F, 1.0F, 3.0F, 6.0F, new Dilation(0.0F)),
-                ModelTransform.of(5.0F, 12.3392F, 15.2304F, 0.2618F, 0.0F, 0.0F));
-
-        // ── ARM LEFT ─────────────────────────────────────────────────────────
-        ModelPartData ArmLeft = Root.addChild("ArmLeft", ModelPartBuilder.create(), ModelTransform.pivot(-12.0F, 3.0F, 4.3333F));
-        ModelPartData Arm2 = ArmLeft.addChild("Arm2", ModelPartBuilder.create(), ModelTransform.pivot(8.0F, -8.0F, -13.0F));
-        Arm2.addChild("Arm2_r1", ModelPartBuilder.create().uv(160, 169).cuboid(-2.5F, -4.0F, -2.0F, 5.0F, 8.0F, 4.0F, new Dilation(0.0F)), ModelTransform.of(-4.5F, 5.5262F, 10.8153F, -0.3927F, 0.0F, 0.0F));
-
-        ModelPartData forearm2 = ArmLeft.addChild("forearm2", ModelPartBuilder.create(), ModelTransform.pivot(-4.0F, -8.0F, -13.0F));
-        forearm2.addChild("ForeArm_r3", ModelPartBuilder.create().uv(19, 177).cuboid(-2.0F, -2.0F, -2.0F, 5.0F, 4.0F, 4.0F, new Dilation(0.0F)), ModelTransform.of(7.0F, 11.3496F, 11.8594F, 1.0472F, 0.0F, 0.0F));
-        forearm2.addChild("ForeArm_r4", ModelPartBuilder.create().uv(0, 177).cuboid(-2.0F, -2.0F, -2.0F, 5.0F, 4.0F, 4.0F, new Dilation(0.0F)), ModelTransform.of(7.0F, 9.4238F, 10.0947F, 0.4363F, 0.0F, 0.0F));
-
-        ModelPartData finger2 = ArmLeft.addChild("finger2", ModelPartBuilder.create(), ModelTransform.pivot(-4.0F, -8.0F, -13.0F));
-        finger2.addChild("finger4_r5", ModelPartBuilder.create()
-                .uv(53, 185).cuboid(0.0F, -2.0F, -3.0F, 1.0F, 3.0F, 6.0F, new Dilation(0.0F))
-                .uv(38, 185).cuboid(2.0F, -2.0F, -3.0F, 1.0F, 3.0F, 6.0F, new Dilation(0.0F))
-                .uv(160, 182).cuboid(4.0F, -2.0F, -3.0F, 1.0F, 3.0F, 6.0F, new Dilation(0.0F)),
-                ModelTransform.of(5.0F, 12.3392F, 15.2304F, 0.2618F, 0.0F, 0.0F));
-
-        // ── TAIL ─────────────────────────────────────────────────────────────
-        ModelPartData Tail = Root.addChild("Tail", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, -5.0F, 50.0F));
-        Tail.addChild("tail1", ModelPartBuilder.create().uv(75, 72).cuboid(-6.0F, -7.0F, -7.0F, 18.0F, 15.0F, 15.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, -0.5F, 0.8333F));
-        Tail.addChild("tail2", ModelPartBuilder.create().uv(79, 0).cuboid(-5.0F, -6.0F, -7.0F, 16.0F, 13.0F, 16.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, -0.5F, 15.8333F));
-        Tail.addChild("tail3", ModelPartBuilder.create().uv(75, 103).cuboid(-4.0F, -5.0F, -7.0F, 14.0F, 11.0F, 18.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, -0.5F, 31.8333F));
-        Tail.addChild("tail4", ModelPartBuilder.create().uv(59, 133).cuboid(-2.0F, -4.0F, -7.0F, 10.0F, 9.0F, 18.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, -0.5F, 49.8333F));
-
-        return TexturedModelData.of(modelData, 256, 256);
-    }
-
-    @Override
-    public void setAngles(T entity, float limbAngle, float limbDistance,
-                          float animationProgress, float headYaw, float headPitch) {}
-
-    @Override
-    public void render(MatrixStack matrices, VertexConsumer vertices,
-                       int light, int overlay,
-                       float red, float green, float blue, float alpha) {
-        Root.render(matrices, vertices, light, overlay, red, green, blue, alpha);
     }
 }
 
@@ -939,20 +1211,78 @@ public abstract class FlyNinbus extends Entity {
 }
 
 ----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/entity/DarkFlyNinbus.java
+Conteúdo:
+package com.bernardo.dbi.entity;
+
+import com.bernardo.dbi.alinhamento.AlinhamentoHelper;
+import com.bernardo.dbi.registry.DBIItems;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
+import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.world.World;
+
+public abstract class DarkFlyNinbus extends Entity {
+
+    int maxSpeed = 20;
+    int minSpeed = 0;
+    boolean canFly = true;
+
+    public DarkFlyNinbus(EntityType<? extends DarkFlyNinbus> type, World world) {
+        super(type, world);
+    }
+
+    public ActionResult interact(PlayerEntity player, Hand hand, EntityHitResult hit) {
+        if (!this.getWorld().isClient) {
+            if (AlinhamentoHelper.isBom(player)) {
+                player.startRiding(this);
+            } else {
+                dropItem(DBIItems.NIMBUS);
+                this.remove(RemovalReason.DISCARDED);
+            }
+        }
+        return ActionResult.SUCCESS;
+    }
+
+    public void setMaxSpeed(int maxSpeed) {
+        if (maxSpeed > 20) {
+            maxSpeed = 20;
+        }
+        this.maxSpeed = maxSpeed;
+    }
+
+    public void setMinSpeed(int minSpeed) {
+        if (minSpeed < 0) {
+            minSpeed = 0;
+        }
+        this.minSpeed = minSpeed;
+    }
+}
+
+----------------------------------------
 Arquivo: src/main/java/com/bernardo/dbi/screen/CaracterScreen.java
 Conteúdo:
 package com.bernardo.dbi.screen;
 
+import com.bernardo.dbi.network.DBINetwork;
+import com.bernardo.dbi.network.PacketIds;
+import com.bernardo.dbi.player.DBIPlayerData;
+import com.bernardo.dbi.screen.widget.BtnArrowLeftSmall;
+import com.bernardo.dbi.screen.widget.BtnArrowRightSmall;
+import com.bernardo.dbi.screen.widget.BtnCloseXLarge;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import com.bernardo.dbi.screen.widget.BtnArrowRightSmall;
-import com.bernardo.dbi.screen.widget.BtnArrowLeftSmall;
-import com.bernardo.dbi.screen.widget.IconButton;
-import com.bernardo.dbi.screen.widget.BtnCloseXLarge;
+
+import java.util.List;
 
 public class CaracterScreen extends Screen {
 
@@ -962,9 +1292,23 @@ public class CaracterScreen extends Screen {
     private static final int IMG_W = 510;
     private static final int IMG_H = 318;
 
-    private int btnX, btnY;
+    private static final List<String> HAIR_OPTIONS = List.of(
+        "",
+        "textures/hairs/hair1.png",
+        "textures/hairs/hair2.png",
+        "textures/hairs/hair3.png"
+    );
+
+    private static final List<String> HAIR_LABELS = List.of(
+        "Nenhum",
+        "Estilo 1",
+        "Estilo Goku",
+        "Estilo 3"
+    );
 
     private int guiLeft, guiTop, menuW, menuH;
+    private float ratio;
+    private int hairIndex = 0;
 
     public CaracterScreen() {
         super(Text.literal("DragonBlockInfinity Menu"));
@@ -974,25 +1318,67 @@ public class CaracterScreen extends Screen {
     protected void init() {
         super.init();
 
-        float ratio = Math.min((this.width * 0.75f) / IMG_W, (this.height * 0.75f) / IMG_H);
+        ratio = Math.min((this.width * 0.75f) / IMG_W, (this.height * 0.75f) / IMG_H);
         menuW = (int) (IMG_W * ratio);
         menuH = (int) (IMG_H * ratio);
         guiLeft = (this.width - menuW) / 2;
-        guiTop = (this.height - menuH) / 2;
+        guiTop  = (this.height - menuH) / 2;
 
-        // Adicionar botão com textura
-        BtnCloseXLarge btnCloseXLarge = new BtnCloseXLarge();
-        int btnX = guiLeft + (int)(menuW * 0.8f); // Posição relativa ao menu
-        int btnY = guiTop + (int)(menuH * 0.9f);
-        
-        btnCloseXLarge.place(btnX, btnY, ratio);
-        btnCloseXLarge.setOnPress(() -> {
-            // Ação do botão, por exemplo, fechar a tela
-            this.close();
+        PlayerEntity player = this.client.player;
+        if (player != null) {
+            Identifier current = DBIPlayerData.getHairTexture(player);
+            if (current == null) {
+                hairIndex = 0;
+            } else {
+                String path = current.getPath();
+                hairIndex = 0;
+                for (int i = 1; i < HAIR_OPTIONS.size(); i++) {
+                    if (HAIR_OPTIONS.get(i).equals(path)) {
+                        hairIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        int rowY     = guiTop  + (int)(menuH * 0.20f);
+        int labelX   = guiLeft + (int)(menuW * 0.58f);
+        int arrowGap = (int)(20 * ratio);
+
+        BtnArrowLeftSmall  btnLeft  = new BtnArrowLeftSmall();
+        BtnArrowRightSmall btnRight = new BtnArrowRightSmall();
+
+        btnLeft.place(labelX - arrowGap - (int)(15 * ratio), rowY, ratio);
+        btnLeft.setOnPress(() -> {
+            hairIndex = (hairIndex - 1 + HAIR_OPTIONS.size()) % HAIR_OPTIONS.size();
+            applyHair(player);
         });
-        this.addDrawableChild(btnCloseXLarge);
-       
 
+        btnRight.place(labelX + (int)(50 * ratio), rowY, ratio);
+        btnRight.setOnPress(() -> {
+            hairIndex = (hairIndex + 1) % HAIR_OPTIONS.size();
+            applyHair(player);
+        });
+
+        this.addDrawableChild(btnLeft);
+        this.addDrawableChild(btnRight);
+
+        BtnCloseXLarge btnClose = new BtnCloseXLarge();
+        btnClose.place(guiLeft + (int)(menuW * 0.88f), guiTop + (int)(menuH * 0.88f), ratio);
+        btnClose.setOnPress(this::close);
+        this.addDrawableChild(btnClose);
+    }
+
+    private void applyHair(PlayerEntity player) {
+        String path = HAIR_OPTIONS.get(hairIndex);
+        if (player != null) {
+            if (path.isEmpty()) {
+                DBIPlayerData.setHairTexture(player, null);
+            } else {
+                DBIPlayerData.setHairTexture(player, new Identifier("dragonblockinfinity", path));
+            }
+        }
+        ClientPlayNetworking.send(PacketIds.SET_HAIR, DBINetwork.buildSetHairPacket(path));
     }
 
     @Override
@@ -1007,11 +1393,18 @@ public class CaracterScreen extends Screen {
 
         PlayerEntity player = this.client.player;
         if (player != null) {
-            int px = guiLeft + menuW / 4;
-            int py = guiTop + menuH * 4 / 7;
-            int scale = (int) (Math.min(menuW, menuH) * 0.25f);
-            InventoryScreen.drawEntity(context, px, py, scale, (float) (px - mouseX), (float) (py - 10 - mouseY), player);
+            int px    = guiLeft + menuW / 4;
+            int py    = guiTop  + menuH * 4 / 7;
+            int scale = (int)(Math.min(menuW, menuH) * 0.25f);
+            InventoryScreen.drawEntity(context, px, py, scale,
+                (float)(px - mouseX), (float)(py - 10 - mouseY), player);
         }
+
+        int labelX = guiLeft + (int)(menuW * 0.58f);
+        int rowY   = guiTop  + (int)(menuH * 0.20f);
+        context.drawText(this.textRenderer,
+            Text.literal("Cabelo: " + HAIR_LABELS.get(hairIndex)),
+            labelX, rowY + 3, 0xFFFFFF, true);
 
         super.render(context, mouseX, mouseY, delta);
     }
@@ -1020,10 +1413,6 @@ public class CaracterScreen extends Screen {
     public boolean shouldPause() {
         return false;
     }
-
-    
-
-    
 }
 
 ----------------------------------------
@@ -1753,10 +2142,51 @@ public enum Race {
 }
 
 ----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/item/NinbusItem.java
+Conteúdo:
+package com.bernardo.dbi.item;
+
+import com.bernardo.dbi.alinhamento.AlinhamentoHelper;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.text.Text;
+import net.minecraft.util.Hand;
+import net.minecraft.util.TypedActionResult;
+import net.minecraft.world.World;
+
+public class NinbusItem extends Item {
+
+    public NinbusItem(Settings settings) {
+        super(settings);
+    }
+
+    @Override
+    public TypedActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
+        ItemStack stack = player.getStackInHand(hand);
+
+        if (!world.isClient) {
+            if (AlinhamentoHelper.isBom(player)) {
+                player.sendMessage(Text.literal("A Nuvem Voadora responde ao seu chamado!"), true);
+            } else {
+                player.sendMessage(Text.literal("A Nuvem Voadora rejeita você..."), true);
+                stack.decrement(1);
+            }
+        }
+
+        return TypedActionResult.success(stack, world.isClient);
+    }
+}
+
+----------------------------------------
 Arquivo: src/main/java/com/bernardo/dbi/mixin/PlayerEntityRendererMixin.java
 Conteúdo:
 package com.bernardo.dbi.mixin;
 
+import com.bernardo.dbi.client.render.layer.HairGokuModel;
+import com.bernardo.dbi.client.render.layer.HairLayer;
+import com.bernardo.dbi.client.render.layer.HairStyle1Model;
+import com.bernardo.dbi.client.render.layer.HairStyle3Model;
 import com.bernardo.dbi.player.DBIPlayerData;
 import com.bernardo.dbi.player.Race;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
@@ -1772,54 +2202,49 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Mixin para PlayerEntityRenderer que adiciona camadas de renderização customizadas
- * e ajusta a textura e escala do jogador baseado nos dados DBI.
- */
 @Mixin(PlayerEntityRenderer.class)
 public abstract class PlayerEntityRendererMixin
         extends LivingEntityRenderer<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> {
 
     public PlayerEntityRendererMixin(EntityRendererFactory.Context ctx,
-        PlayerEntityModel<AbstractClientPlayerEntity> model,
-        float shadowRadius) {
+        PlayerEntityModel<AbstractClientPlayerEntity> model, float shadowRadius) {
         super(ctx, model, shadowRadius);
     }
 
     @SuppressWarnings("unchecked")
     @Inject(method = "<init>", at = @At("TAIL"))
     private void dbi_addLayers(EntityRendererFactory.Context ctx, boolean slim, CallbackInfo ci) {
-        // Removido: camada RaceBodyLayer conforme pedido
+        this.addFeature(new HairLayer<>(
+            this,
+            ctx.getPart(HairStyle1Model.LAYER),
+            ctx.getPart(HairGokuModel.LAYER),
+            ctx.getPart(HairStyle3Model.LAYER)
+        ));
     }
 
-    /**
-     * Sobrescreve a textura do jogador baseada na raça DBI.
-     * Isso substitui a skin padrão do Minecraft por texturas customizadas.
-     */
     @Inject(method = "getTexture", at = @At("HEAD"), cancellable = true)
-    private void dbi_getRaceTexture(AbstractClientPlayerEntity player, CallbackInfoReturnable<Identifier> cir) {
+    private void dbi_getRaceTexture(AbstractClientPlayerEntity player,
+                                    CallbackInfoReturnable<Identifier> cir) {
         Race race = DBIPlayerData.getRace(player);
-        Identifier raceTexture = switch (race) {
+        Identifier tex = switch (race) {
             case NAMEKIAN -> new Identifier("dragonblockinfinity", "textures/races/namekian.png");
             case ARCOSIAN -> new Identifier("dragonblockinfinity", "textures/races/arconsian.png");
-            default -> new Identifier("dragonblockinfinity", "textures/races/base.png");
+            default -> null;
         };
-        cir.setReturnValue(raceTexture);
+        if (tex != null) cir.setReturnValue(tex);
     }
 
-    /**
-     * Aplica escala ao modelo do jogador baseada no tamanho DBI.
-     * Isso garante que a renderização visual corresponda ao hitbox ajustado.
-     */
     @Inject(method = "render", at = @At("HEAD"))
-    private void dbi_applySizeScale(AbstractClientPlayerEntity player, float yaw, float tickDelta, MatrixStack matrices, net.minecraft.client.render.VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
+    private void dbi_applySizeScale(AbstractClientPlayerEntity player, float yaw, float tickDelta,
+                                    MatrixStack matrices,
+                                    net.minecraft.client.render.VertexConsumerProvider vertexConsumers,
+                                    int light, CallbackInfo ci) {
         float sizeScale = DBIPlayerData.getFinalSize(player);
         if (sizeScale != 1.0f) {
             matrices.scale(sizeScale, sizeScale, sizeScale);
         }
     }
 }
-
 
 ----------------------------------------
 Arquivo: src/main/java/com/bernardo/dbi/mixin/PlayerEntitySizeMixin.java
@@ -1874,6 +2299,7 @@ Conteúdo:
 package com.bernardo.dbi.mixin;
 
 import com.bernardo.dbi.player.DBIPlayerData;
+import com.bernardo.dbi.player.DBIPlayerDataAccess;
 import net.minecraft.entity.EntityDimensions;
 import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.LivingEntity;
@@ -1888,15 +2314,16 @@ public abstract class LivingEntityEyeHeightMixin {
 
     @Inject(method = "getEyeHeight(Lnet/minecraft/entity/EntityPose;Lnet/minecraft/entity/EntityDimensions;)F", at = @At("RETURN"), cancellable = true)
     private void dbi_applyPlayerEyeHeight(EntityPose pose, EntityDimensions dimensions, CallbackInfoReturnable<Float> cir) {
-        if (!((Object) this instanceof PlayerEntity)) return;
+        if (!((Object) this instanceof PlayerEntity player)) return;
 
-        PlayerEntity player = (PlayerEntity)(Object) this;
+        // Null check para evitar NPE durante o construtor da entidade
+        DBIPlayerDataAccess access = (DBIPlayerDataAccess) player;
+        if (access.dbi_getRace() == null) return;
+
         float eyeHeightScale = DBIPlayerData.getEyeHeightScale(player);
         if (eyeHeightScale <= 0.0f) return;
 
-        // Apply eye height scaling (adjusted for 128x128 texture proportions)
-        float baseEyeHeight = cir.getReturnValue();
-        float scaledEyeHeight = baseEyeHeight * eyeHeightScale;
+        float scaledEyeHeight = cir.getReturnValue() * eyeHeightScale;
         cir.setReturnValue(scaledEyeHeight);
     }
 }
@@ -2039,9 +2466,54 @@ public class Dbi implements ModInitializer {
         DBICreativeTab.initialize();
         DBIEntities.initialize();
         DBIPlayerEvents.initialize();
+        com.bernardo.dbi.network.DBINetwork.initialize();
 
         // Registrar comandos
         
+    }
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/network/PacketIds.java
+Conteúdo:
+package com.bernardo.dbi.network;
+
+import net.minecraft.util.Identifier;
+
+public class PacketIds {
+    public static final Identifier SET_HAIR = new Identifier("dragonblockinfinity", "set_hair");
+}
+
+----------------------------------------
+Arquivo: src/main/java/com/bernardo/dbi/network/DBINetwork.java
+Conteúdo:
+package com.bernardo.dbi.network;
+
+import com.bernardo.dbi.player.DBIPlayerData;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.util.Identifier;
+
+public class DBINetwork {
+
+    public static void initialize() {
+        ServerPlayNetworking.registerGlobalReceiver(PacketIds.SET_HAIR, (server, player, handler, buf, responseSender) -> {
+            String texturePath = buf.readString(256);
+            server.execute(() -> {
+                if (texturePath.isEmpty()) {
+                    DBIPlayerData.setHairTexture(player, null);
+                } else {
+                    DBIPlayerData.setHairTexture(player, new Identifier("dragonblockinfinity", texturePath));
+                }
+            });
+        });
+    }
+
+    public static PacketByteBuf buildSetHairPacket(String texturePath) {
+        PacketByteBuf buf = PacketByteBufs.create();
+        buf.writeString(texturePath == null ? "" : texturePath);
+        return buf;
     }
 }
 
@@ -13001,7 +13473,8 @@ Conteúdo:
     "compatibilityLevel": "JAVA_17",
     "mixins": [
         "PlayerEntityMixin",
-        "PlayerEntitySizeMixin"
+        "PlayerEntitySizeMixin",
+        "LivingEntityEyeHeightMixin"
     ],
     "client": [
         "PlayerEntityRendererMixin"
@@ -13072,10 +13545,9 @@ src/main/resources/assets/dragonblockinfinity/textures/entity/tailsayan.png
 src/main/resources/assets/dragonblockinfinity/textures/entity/dark_fly_ninbus.png
 src/main/resources/assets/dragonblockinfinity/textures/entity/fly_ninbus.png
 src/main/resources/assets/dragonblockinfinity/textures/hairs/hair_base.png
-src/main/resources/assets/dragonblockinfinity/textures/hairs/hair_vegeta_overlay.png
-src/main/resources/assets/dragonblockinfinity/textures/hairs/hair_trunks_overlay.png
-src/main/resources/assets/dragonblockinfinity/textures/hairs/hair_gohan_overlay.png
-src/main/resources/assets/dragonblockinfinity/textures/hairs/hair_goku_overlay.png
+src/main/resources/assets/dragonblockinfinity/textures/hairs/hair2.png
+src/main/resources/assets/dragonblockinfinity/textures/hairs/hair3.png
+src/main/resources/assets/dragonblockinfinity/textures/hairs/hair1.png
 src/main/resources/assets/dragonblockinfinity/textures/models/peso1.png
 src/main/resources/assets/dragonblockinfinity/textures/gui/custom_inv_player.png
 src/main/resources/assets/dragonblockinfinity/textures/gui/life.png
@@ -13125,3 +13597,59 @@ src/main/resources/assets/dragonblockinfinity/textures/block/block_dragonblock1.
 src/main/resources/assets/dragonblockinfinity/textures/block/block_dirty_stone_cobblestone.png
 === ARQUIVOS OGG ===
 src/main/resources/assets/dragonblockinfinity/sounds/passos.ogg
+=== RESOLUÇÃO DAS IMAGENS ===
+src/main/resources/assets/dragonblockinfinity/textures/entity/tail-arconsian.png: 256 x 256
+src/main/resources/assets/dragonblockinfinity/textures/entity/tailsayan.png: 256 x 256
+src/main/resources/assets/dragonblockinfinity/textures/entity/dark_fly_ninbus.png: 1024 x 1024
+src/main/resources/assets/dragonblockinfinity/textures/entity/fly_ninbus.png: 1024 x 1024
+src/main/resources/assets/dragonblockinfinity/textures/hairs/hair_base.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/hairs/hair2.png: 64 x 64
+src/main/resources/assets/dragonblockinfinity/textures/hairs/hair3.png: 64 x 64
+src/main/resources/assets/dragonblockinfinity/textures/hairs/hair1.png: 128 x 128
+src/main/resources/assets/dragonblockinfinity/textures/models/peso1.png: 1024 x 512
+src/main/resources/assets/dragonblockinfinity/textures/gui/custom_inv_player.png: 256 x 256
+src/main/resources/assets/dragonblockinfinity/textures/gui/life.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/gui/icons_btn.png: 256 x 256
+src/main/resources/assets/dragonblockinfinity/textures/gui/menu2.png: 1024 x 1024
+src/main/resources/assets/dragonblockinfinity/textures/gui/menu.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/particules/hit_clash.png: 512 x 3072
+src/main/resources/assets/dragonblockinfinity/textures/races/arconsian.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/races/namekian.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/eyes/eye2.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/eyes/eye_arcosian1.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/eyes/eye1.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/nose/nose2.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/nose/nose3.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/nose/nose1.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/mouth/mouth1.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/mouth/mouth2.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/mouth/mouth3.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/item/dragon/item_radar.png: 256 x 256
+src/main/resources/assets/dragonblockinfinity/textures/item/ninbus/item_dark_fly_ninbus.png: 704 x 368
+src/main/resources/assets/dragonblockinfinity/textures/item/ninbus/item_fly_ninbus.png: 704 x 368
+src/main/resources/assets/dragonblockinfinity/textures/item/scouter/item_scouter.png: 1024 x 1024
+src/main/resources/assets/dragonblockinfinity/textures/item/pesos/item_peso1.png: 1024 x 1024
+src/main/resources/assets/dragonblockinfinity/textures/item/comida/item_senzu.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/item/comida/item_dino_meat_cooked.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/item/comida/item_dino_meat.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/item/blocks/btem_grass_namek.png: 1024 x 1024
+src/main/resources/assets/dragonblockinfinity/textures/item/blocks/item_dirty_stone_cobblestone.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/item/blocks/btem_dirty_stone_dirty.png: 1024 x 1024
+src/main/resources/assets/dragonblockinfinity/textures/item/blocks/item_dirty_stone.png: 256 x 256
+src/main/resources/assets/dragonblockinfinity/textures/npc/dinosauro1.png: 256 x 256
+src/main/resources/assets/dragonblockinfinity/textures/fx/ki_atcck_chargin.png: 32 x 1152
+src/main/resources/assets/dragonblockinfinity/textures/fx/aura/ki_aura_ssj1.png: 256 x 4096
+src/main/resources/assets/dragonblockinfinity/textures/fx/aura/ki_aura_base.png: 256 x 4096
+src/main/resources/assets/dragonblockinfinity/textures/fx/aura/ki_aura_ssj3.png: 256 x 4096
+src/main/resources/assets/dragonblockinfinity/textures/fx/aura/ki_aura_ssj2.png: 256 x 4096
+src/main/resources/assets/dragonblockinfinity/textures/block/block_dragonblock6.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/block/block_dragonblock3.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/block/block_dragonblock5.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/block/block_dirty_stone_stone.png: 256 x 256
+src/main/resources/assets/dragonblockinfinity/textures/block/block_dragonblock2.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/block/block_namek_dirty.png: 256 x 256
+src/main/resources/assets/dragonblockinfinity/textures/block/block_namek_grass.png: 256 x 256
+src/main/resources/assets/dragonblockinfinity/textures/block/block_dragonblock7.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/block/block_dragonblock4.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/block/block_dragonblock1.png: 512 x 512
+src/main/resources/assets/dragonblockinfinity/textures/block/block_dirty_stone_cobblestone.png: 256 x 256

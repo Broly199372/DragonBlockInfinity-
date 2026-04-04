@@ -20,6 +20,7 @@ public class Dbi implements ModInitializer {
         DBICreativeTab.initialize();
         DBIEntities.initialize();
         DBIPlayerEvents.initialize();
+        com.bernardo.dbi.network.DBINetwork.initialize();
 
         // Registrar comandos
         
