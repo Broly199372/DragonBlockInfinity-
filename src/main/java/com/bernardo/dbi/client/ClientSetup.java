@@ -2,6 +2,7 @@ package com.bernardo.dbi.client;
 
 import com.bernardo.dbi.client.render.layer.HairGokuModel;
 import com.bernardo.dbi.client.render.layer.HairStyle1Model;
+import com.bernardo.dbi.client.render.layer.HairStyle3Model;
 import com.bernardo.dbi.screen.CaracterScreen;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -16,6 +17,7 @@ public class ClientSetup implements ClientModInitializer {
 
         EntityModelLayerRegistry.registerModelLayer(HairStyle1Model.LAYER, HairStyle1Model::getTexturedModelData);
         EntityModelLayerRegistry.registerModelLayer(HairGokuModel.LAYER,   HairGokuModel::getTexturedModelData);
+        EntityModelLayerRegistry.registerModelLayer(HairStyle3Model.LAYER, HairStyle3Model::getTexturedModelData);
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (KeyBindings.OPEN_MENU.wasPressed()) {

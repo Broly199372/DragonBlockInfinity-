@@ -19,6 +19,7 @@ public class CaracterScreen extends Screen {
     private static final int IMG_W = 510;
     private static final int IMG_H = 318;
 
+    String names = "hair, hair1, hair2, hair3, nose1, nose2, nose3, eye1, eye2, eye1";
     private int btnX, btnY;
 
     private int guiLeft, guiTop, menuW, menuH;

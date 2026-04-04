@@ -3,6 +3,7 @@ package com.bernardo.dbi.mixin;
 import com.bernardo.dbi.client.render.layer.HairGokuModel;
 import com.bernardo.dbi.client.render.layer.HairLayer;
 import com.bernardo.dbi.client.render.layer.HairStyle1Model;
+import com.bernardo.dbi.client.render.layer.HairStyle3Model;
 import com.bernardo.dbi.player.DBIPlayerData;
 import com.bernardo.dbi.player.Race;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
@@ -33,7 +34,8 @@ public abstract class PlayerEntityRendererMixin
         this.addFeature(new HairLayer<>(
             this,
             ctx.getPart(HairStyle1Model.LAYER),
-            ctx.getPart(HairGokuModel.LAYER)
+            ctx.getPart(HairGokuModel.LAYER),
+            ctx.getPart(HairStyle3Model.LAYER)
         ));
     }
 
