@@ -1,9 +1,9 @@
 package com.bernardo.dbi.mixin;
 
 import com.bernardo.dbi.client.render.layer.HairGokuModel;
+import com.bernardo.dbi.client.render.layer.HairVegetaModel;
+import com.bernardo.dbi.client.render.layer.HairTrunksModel;
 import com.bernardo.dbi.client.render.layer.HairLayer;
-import com.bernardo.dbi.client.render.layer.HairStyle1Model;
-import com.bernardo.dbi.client.render.layer.HairStyle3Model;
 import com.bernardo.dbi.player.DBIPlayerData;
 import com.bernardo.dbi.player.Race;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
@@ -33,9 +33,9 @@ public abstract class PlayerEntityRendererMixin
     private void dbi_addLayers(EntityRendererFactory.Context ctx, boolean slim, CallbackInfo ci) {
         this.addFeature(new HairLayer<>(
             this,
-            ctx.getPart(HairStyle1Model.LAYER),
+            ctx.getPart(HairVegetaModel.LAYER),
             ctx.getPart(HairGokuModel.LAYER),
-            ctx.getPart(HairStyle3Model.LAYER)
+            ctx.getPart(HairTrunksModel.LAYER)
         ));
     }
 

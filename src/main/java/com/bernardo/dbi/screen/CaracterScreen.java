@@ -26,16 +26,16 @@ public class CaracterScreen extends Screen {
 
     private static final List<String> HAIR_OPTIONS = List.of(
         "",
-        "textures/hairs/hair1.png",
-        "textures/hairs/hair2.png",
-        "textures/hairs/hair3.png"
+        "textures/hairs/hair_vegeta.png",
+        "textures/hairs/hair_goku.png",
+        "textures/hairs/hair_trunks.png"
     );
 
     private static final List<String> HAIR_LABELS = List.of(
         "Nenhum",
-        "Estilo 1",
-        "Estilo Goku",
-        "Estilo 3"
+        "Vegeta",
+        "Goku",
+        "Trunks"
     );
 
     private int guiLeft, guiTop, menuW, menuH;
@@ -63,7 +63,6 @@ public class CaracterScreen extends Screen {
                 hairIndex = 0;
             } else {
                 String path = current.getPath();
-                hairIndex = 0;
                 for (int i = 1; i < HAIR_OPTIONS.size(); i++) {
                     if (HAIR_OPTIONS.get(i).equals(path)) {
                         hairIndex = i;
@@ -73,8 +72,8 @@ public class CaracterScreen extends Screen {
             }
         }
 
-        int rowY     = guiTop  + (int)(menuH * 0.20f);
-        int labelX   = guiLeft + (int)(menuW * 0.58f);
+        int rowY   = guiTop  + (int)(menuH * 0.20f);
+        int labelX = guiLeft + (int)(menuW * 0.58f);
         int arrowGap = (int)(20 * ratio);
 
         BtnArrowLeftSmall  btnLeft  = new BtnArrowLeftSmall();
