@@ -1,9 +1,6 @@
 package com.bernardo.dbi.mixin;
 
-import com.bernardo.dbi.client.render.layer.HairGokuModel;
-import com.bernardo.dbi.client.render.layer.HairVegetaModel;
-import com.bernardo.dbi.client.render.layer.HairTrunksModel;
-import com.bernardo.dbi.client.render.layer.HairLayer;
+
 import com.bernardo.dbi.player.DBIPlayerData;
 import com.bernardo.dbi.player.Race;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
@@ -29,15 +26,6 @@ public abstract class PlayerEntityRendererMixin
     }
 
     @SuppressWarnings("unchecked")
-    @Inject(method = "<init>", at = @At("TAIL"))
-    private void dbi_addLayers(EntityRendererFactory.Context ctx, boolean slim, CallbackInfo ci) {
-        this.addFeature(new HairLayer<>(
-            this,
-            ctx.getPart(HairVegetaModel.LAYER),
-            ctx.getPart(HairGokuModel.LAYER),
-            ctx.getPart(HairTrunksModel.LAYER)
-        ));
-    }
 
     @Inject(method = "getTexture", at = @At("HEAD"), cancellable = true)
     private void dbi_getRaceTexture(AbstractClientPlayerEntity player,

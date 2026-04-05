@@ -39,3 +39,8 @@ DragonBlockInfinity é um mod para Minecraft que traz elementos do universo Drag
 - Usar Fabric API para compatibilidade
 - Manter performance otimizada
 - Seguir convenções de código do projeto
+
+## Notas atuais
+
+1. **Recortes UVS**
+   - 100% funcionais todos

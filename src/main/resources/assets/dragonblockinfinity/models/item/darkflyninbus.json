@@ -1,8 +1,7 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "dragonblockinfinity:item/ninbus/item_fly_ninbus",
-    "layer1": "dragonblockinfinity:item/ninbus/item_dark_fly_ninbus"
+    "layer0": "dragonblockinfinity:item/ninbus/item_dark_fly_ninbus"
   },
   "display": {
     "gui":                   { "scale": [1.0, 1.0, 1.0] },

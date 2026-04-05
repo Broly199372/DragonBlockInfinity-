@@ -1,7 +1,7 @@
 package com.bernardo.dbi.item;
 
 import com.bernardo.dbi.alinhamento.AlinhamentoHelper;
-import com.bernardo.dbi.entity.NimbusEntity;
+import com.bernardo.dbi.entity.DarkNimbusEntity;
 import com.bernardo.dbi.registry.DBIEntities;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
@@ -11,9 +11,9 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
 
-public class NinbusItem extends Item {
+public class DarkNinbusItem extends Item {
 
-    public NinbusItem(Settings settings) {
+    public DarkNinbusItem(Settings settings) {
         super(settings);
     }
 
@@ -22,14 +22,15 @@ public class NinbusItem extends Item {
         ItemStack stack = player.getStackInHand(hand);
 
         if (!world.isClient) {
-            if (AlinhamentoHelper.isBom(player)) {
-                NimbusEntity nimbus = new NimbusEntity(DBIEntities.NIMBUS, world);
-                nimbus.setPosition(player.getPos().add(0, 0.5, 0));
-                world.spawnEntity(nimbus);
+            // Dark Ninbus rejects good-aligned players
+            if (!AlinhamentoHelper.isBom(player)) {
+                DarkNimbusEntity darkNimbus = new DarkNimbusEntity(DBIEntities.DARK_NIMBUS, world);
+                darkNimbus.setPosition(player.getPos().add(0, 0.5, 0));
+                world.spawnEntity(darkNimbus);
                 stack.decrement(1);
-                player.sendMessage(Text.literal("A Nuvem Voadora responde ao seu chamado!"), true);
+                player.sendMessage(Text.literal("A Nuvem Voadora das Trevas responde ao seu chamado!"), true);
             } else {
-                player.sendMessage(Text.literal("A Nuvem Voadora rejeita você..."), true);
+                player.sendMessage(Text.literal("A Nuvem Voadora das Trevas rejeita você..."), true);
                 stack.decrement(1);
             }
         }

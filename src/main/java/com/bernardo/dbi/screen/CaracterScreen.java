@@ -1,12 +1,7 @@
 package com.bernardo.dbi.screen;
 
-import com.bernardo.dbi.network.DBINetwork;
-import com.bernardo.dbi.network.PacketIds;
 import com.bernardo.dbi.player.DBIPlayerData;
-import com.bernardo.dbi.screen.widget.BtnArrowLeftSmall;
-import com.bernardo.dbi.screen.widget.BtnArrowRightSmall;
 import com.bernardo.dbi.screen.widget.BtnCloseXLarge;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
@@ -24,23 +19,10 @@ public class CaracterScreen extends Screen {
     private static final int IMG_W = 510;
     private static final int IMG_H = 318;
 
-    private static final List<String> HAIR_OPTIONS = List.of(
-        "",
-        "textures/hairs/hair_vegeta.png",
-        "textures/hairs/hair_goku.png",
-        "textures/hairs/hair_trunks.png"
-    );
-
-    private static final List<String> HAIR_LABELS = List.of(
-        "Nenhum",
-        "hair2",
-        "hair1",
-        "hair3"
-    );
+    
 
     private int guiLeft, guiTop, menuW, menuH;
     private float ratio;
-    private int hairIndex = 0;
 
     public CaracterScreen() {
         super(Text.literal("DragonBlockInfinity Menu"));
@@ -56,60 +38,13 @@ public class CaracterScreen extends Screen {
         guiLeft = (this.width - menuW) / 2;
         guiTop  = (this.height - menuH) / 2;
 
-        PlayerEntity player = this.client.player;
-        if (player != null) {
-            Identifier current = DBIPlayerData.getHairTexture(player);
-            if (current == null) {
-                hairIndex = 0;
-            } else {
-                String path = current.getPath();
-                for (int i = 1; i < HAIR_OPTIONS.size(); i++) {
-                    if (HAIR_OPTIONS.get(i).equals(path)) {
-                        hairIndex = i;
-                        break;
-                    }
-                }
-            }
-        }
-
-        int rowY   = guiTop  + (int)(menuH * 0.20f);
-        int labelX = guiLeft + (int)(menuW * 0.58f);
-        int arrowGap = (int)(20 * ratio);
-
-        BtnArrowLeftSmall  btnLeft  = new BtnArrowLeftSmall();
-        BtnArrowRightSmall btnRight = new BtnArrowRightSmall();
-
-        btnLeft.place(labelX - arrowGap - (int)(15 * ratio), rowY, ratio);
-        btnLeft.setOnPress(() -> {
-            hairIndex = (hairIndex - 1 + HAIR_OPTIONS.size()) % HAIR_OPTIONS.size();
-            applyHair(player);
-        });
-
-        btnRight.place(labelX + (int)(50 * ratio), rowY, ratio);
-        btnRight.setOnPress(() -> {
-            hairIndex = (hairIndex + 1) % HAIR_OPTIONS.size();
-            applyHair(player);
-        });
-
-        this.addDrawableChild(btnLeft);
-        this.addDrawableChild(btnRight);
+    
+        
 
         BtnCloseXLarge btnClose = new BtnCloseXLarge();
         btnClose.place(guiLeft + (int)(menuW * 0.88f), guiTop + (int)(menuH * 0.88f), ratio);
         btnClose.setOnPress(this::close);
         this.addDrawableChild(btnClose);
-    }
-
-    private void applyHair(PlayerEntity player) {
-        String path = HAIR_OPTIONS.get(hairIndex);
-        if (player != null) {
-            if (path.isEmpty()) {
-                DBIPlayerData.setHairTexture(player, null);
-            } else {
-                DBIPlayerData.setHairTexture(player, new Identifier("dragonblockinfinity", path));
-            }
-        }
-        ClientPlayNetworking.send(PacketIds.SET_HAIR, DBINetwork.buildSetHairPacket(path));
     }
 
     @Override
@@ -130,12 +65,6 @@ public class CaracterScreen extends Screen {
             InventoryScreen.drawEntity(context, px, py, scale,
                 (float)(px - mouseX), (float)(py - 10 - mouseY), player);
         }
-
-        int labelX = guiLeft + (int)(menuW * 0.58f);
-        int rowY   = guiTop  + (int)(menuH * 0.20f);
-        context.drawText(this.textRenderer,
-            Text.literal("Cabelo: " + HAIR_LABELS.get(hairIndex)),
-            labelX, rowY + 3, 0xFFFFFF, true);
 
         super.render(context, mouseX, mouseY, delta);
     }

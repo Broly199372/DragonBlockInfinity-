@@ -10,7 +10,7 @@ import net.minecraft.entity.LivingEntity;
 public class DBIPlayerModel<T extends LivingEntity> extends BipedEntityModel<T> {
 
     // Usando tamanho padrão do Minecraft (64x64)
-    // As camadas (hair, eyes, etc) serão texturas 2D customizadas
+    // As camadas (eyes, etc) serão texturas 2D customizadas
     public static final int TEX_W = 64;
     public static final int TEX_H = 64;
 
@@ -36,11 +36,10 @@ public class DBIPlayerModel<T extends LivingEntity> extends BipedEntityModel<T> 
                 .uv(32, 0).cuboid(-4, -8, -4, 8, 8, 0, new Dilation(0.01f)), // Face overlay
             ModelTransform.pivot(0, 0, 0));
 
-        // HAT — com overlay para cabelos e acessórios
+        // HAT — com overlay para acessórios
         root.addChild(EntityModelPartNames.HAT,
             ModelPartBuilder.create()
                 .uv(32, 0).cuboid(-4, -8, -4, 8, 8, 8, new Dilation(0.5f))
-                // Overlay adicional para cabelos
                 .uv(0, 32).cuboid(-4, -8, -4, 8, 8, 0, new Dilation(0.51f)),
             ModelTransform.pivot(0, 0, 0));
 

@@ -1,6 +1,12 @@
 package com.bernardo.dbi.registry;
 
 import com.bernardo.dbi.item.NinbusItem;
+import com.bernardo.dbi.item.DarkNinbusItem;
+import com.bernardo.dbi.item.SenzuItem;
+import com.bernardo.dbi.item.ScouterItem;
+import com.bernardo.dbi.item.RadarItem;
+import com.bernardo.dbi.item.PesoItem;
+import com.bernardo.dbi.item.DragonBallBlockItem;
 import net.minecraft.block.Block;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.FoodComponent;
@@ -11,13 +17,13 @@ import net.minecraft.util.Identifier;
 
 public class DBIItems {
 
-    public static final Item BLOCK_DRAGONBALL1 = registerBlockItem("block_dragonball1", DBIBlocks.BLOCK_DRAGONBALL1);
-    public static final Item BLOCK_DRAGONBALL2 = registerBlockItem("block_dragonball2", DBIBlocks.BLOCK_DRAGONBALL2);
-    public static final Item BLOCK_DRAGONBALL3 = registerBlockItem("block_dragonball3", DBIBlocks.BLOCK_DRAGONBALL3);
-    public static final Item BLOCK_DRAGONBALL4 = registerBlockItem("block_dragonball4", DBIBlocks.BLOCK_DRAGONBALL4);
-    public static final Item BLOCK_DRAGONBALL5 = registerBlockItem("block_dragonball5", DBIBlocks.BLOCK_DRAGONBALL5);
-    public static final Item BLOCK_DRAGONBALL6 = registerBlockItem("block_dragonball6", DBIBlocks.BLOCK_DRAGONBALL6);
-    public static final Item BLOCK_DRAGONBALL7 = registerBlockItem("block_dragonball7", DBIBlocks.BLOCK_DRAGONBALL7);
+    public static final Item BLOCK_DRAGONBALL1 = registerBlockItem("block_dragonball1", DBIBlocks.BLOCK_DRAGONBALL1, 1);
+    public static final Item BLOCK_DRAGONBALL2 = registerBlockItem("block_dragonball2", DBIBlocks.BLOCK_DRAGONBALL2, 2);
+    public static final Item BLOCK_DRAGONBALL3 = registerBlockItem("block_dragonball3", DBIBlocks.BLOCK_DRAGONBALL3, 3);
+    public static final Item BLOCK_DRAGONBALL4 = registerBlockItem("block_dragonball4", DBIBlocks.BLOCK_DRAGONBALL4, 4);
+    public static final Item BLOCK_DRAGONBALL5 = registerBlockItem("block_dragonball5", DBIBlocks.BLOCK_DRAGONBALL5, 5);
+    public static final Item BLOCK_DRAGONBALL6 = registerBlockItem("block_dragonball6", DBIBlocks.BLOCK_DRAGONBALL6, 6);
+    public static final Item BLOCK_DRAGONBALL7 = registerBlockItem("block_dragonball7", DBIBlocks.BLOCK_DRAGONBALL7, 7);
 
     public static final Item NAMEK_GRASS             = registerBlockItem("namek_grass",             DBIBlocks.NAMEK_GRASS);
     public static final Item NAMEK_DIRTY             = registerBlockItem("namek_dirty",             DBIBlocks.NAMEK_DIRTY);
@@ -25,7 +31,7 @@ public class DBIItems {
     public static final Item DIRTY_STONE_COBBLESTONE = registerBlockItem("dirty_stone_cobblestone", DBIBlocks.DIRTY_STONE_COBBLESTONE);
 
     public static final Item SENZU = register("senzu",
-        new Item(new Item.Settings()
+        new SenzuItem(new Item.Settings()
             .food(new FoodComponent.Builder()
                 .hunger(10)
                 .saturationModifier(1.0f)
@@ -47,9 +53,10 @@ public class DBIItems {
                 .build())));
 
     public static final Item NIMBUS  = register("nimbus",  new NinbusItem(new Item.Settings().maxCount(1)));
-    public static final Item RADAR   = register("radar",   new Item(new Item.Settings().maxCount(1)));
-    public static final Item PESO    = register("peso",    new Item(new Item.Settings().maxCount(16)));
-    public static final Item SCOUTER = register("scouter", new Item(new Item.Settings().maxCount(1)));
+    public static final Item DARK_NIMBUS = register("dark_nimbus", new DarkNinbusItem(new Item.Settings().maxCount(1)));
+    public static final Item RADAR   = register("radar",   new RadarItem(new Item.Settings().maxCount(1)));
+    public static final Item PESO    = register("peso",    new PesoItem(new Item.Settings().maxCount(16)));
+    public static final Item SCOUTER = register("scouter", new ScouterItem(new Item.Settings().maxCount(1)));
 
     private static Item register(String name, Item item) {
         return Registry.register(Registries.ITEM, new Identifier("dragonblockinfinity", name), item);
@@ -57,6 +64,10 @@ public class DBIItems {
 
     private static Item registerBlockItem(String name, Block block) {
         return register(name, new BlockItem(block, new Item.Settings()));
+    }
+
+    private static Item registerBlockItem(String name, Block block, int ballNumber) {
+        return register(name, new DragonBallBlockItem(block, new Item.Settings(), ballNumber));
     }
 
     public static void initialize() {}

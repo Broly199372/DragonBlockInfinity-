@@ -1,5 +1,8 @@
 {
-    "parent": "dragonblockinfinity:block/namek_dirty",
+    "parent": "block/cube_all",
+    "textures": {
+        "all": "dragonblockinfinity:block/block_namek_dirty"
+    },
     "display": {
         "gui": {
             "scale": [

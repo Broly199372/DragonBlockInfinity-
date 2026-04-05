@@ -2,7 +2,7 @@
     "credit": "Converted from Blockbench model (flyninbus) - DragonBlockInfinity2",
     "texture_size": [256, 256],
     "textures": {
-        "0": "dragonblockinfinity:entity/fly_ninbus"
+        "0": "dragonblockinfinity:entity/dark_fly_ninbus"
     },
     "elements": [
         {"name": "nubecita1", "from": [-0.5625, 0.40625, -0.828125], "to": [0.625, 1.125, 0.609375], "faces": {"north": {"uv": [7.0, 3.0, 8.5, 4.625], "texture": "#0"}, "east": {"uv": [4.625, 3.0, 7.0, 4.625], "texture": "#0"}, "south": {"uv": [10.375, 3.0, 11.875, 4.625], "texture": "#0"}, "west": {"uv": [8.5, 3.0, 10.375, 4.625], "texture": "#0"}, "up": {"uv": [8.5, 3.0, 7.0, 0.625], "texture": "#0"}, "down": {"uv": [10.0, 0.625, 8.5, 3.0], "texture": "#0"}}},

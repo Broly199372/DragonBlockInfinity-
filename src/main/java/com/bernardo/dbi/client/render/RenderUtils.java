@@ -11,7 +11,7 @@ import net.minecraft.util.Identifier;
 public class RenderUtils {
 
     public enum FeatureType {
-        HAIR, NOSE, EYES, MOUTH, RACE_BODY
+        NOSE, EYES, MOUTH, RACE_BODY
     }
 
     /**
@@ -36,7 +36,6 @@ public class RenderUtils {
      */
     public static float getFaceLayerOffset(FeatureType featureType) {
         return switch (featureType) {
-            case HAIR -> 0.0f;
             case NOSE -> 0.02f;
             case EYES -> 0.01f;
             case MOUTH -> 0.025f;
@@ -49,7 +48,6 @@ public class RenderUtils {
      */
     public static float getFaceVerticalOffset(FeatureType featureType) {
         return switch (featureType) {
-            case HAIR -> -0.25f;
             case NOSE -> -0.0625f;
             case EYES -> -0.125f;
             case MOUTH -> 0.0f;
@@ -62,7 +60,6 @@ public class RenderUtils {
      */
     public static float getFeatureAlpha(FeatureType featureType) {
         return switch (featureType) {
-            case HAIR -> 0.9f;
             case NOSE -> 0.9f;
             case EYES -> 0.95f;
             case MOUTH -> 0.85f;
@@ -78,13 +75,7 @@ public class RenderUtils {
     }
 
     /**
-     * Pequeno desvio oscilante para cabelo
-     */
-    public static float getHairSway(float tick) {
-        return 0.0f + 0.015f * (float) Math.sin(tick * 0.12f);
-    }
 
-    /**
      * Escala de brilho para olhos, dá efeito “vivo”
      */
     public static float getEyeGlow(float tick) {
