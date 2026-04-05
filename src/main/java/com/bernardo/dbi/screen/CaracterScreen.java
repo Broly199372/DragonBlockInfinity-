@@ -33,9 +33,9 @@ public class CaracterScreen extends Screen {
 
     private static final List<String> HAIR_LABELS = List.of(
         "Nenhum",
-        "Vegeta",
-        "Goku",
-        "Trunks"
+        "hair2",
+        "hair1",
+        "hair3"
     );
 
     private int guiLeft, guiTop, menuW, menuH;
